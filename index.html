@@ -495,7 +495,14 @@ const biteChance = (l = S.bait) => 0.32 + 0.09 * l;
 /* 구글 로그인 + 클라우드 저장(Firebase): Firebase 콘솔의 '웹 앱 구성' 객체를 그대로 붙여 넣으면 켜져요 (README 참고).
    이 값은 비밀이 아니에요. 다른 사람이 남의 기록을 못 건드리게 막는 건 firestore.rules가 해요.
    예) const FIREBASE_CONFIG = { apiKey: '...', authDomain: '...', projectId: '...', storageBucket: '...', messagingSenderId: '...', appId: '...' }; */
-const FIREBASE_CONFIG = null;
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBexX2uMw2a9c3rV7eOpC5JOPInL525Vuc',
+  authDomain: 'abyss-of-the-ocean.firebaseapp.com',
+  projectId: 'abyss-of-the-ocean',
+  storageBucket: 'abyss-of-the-ocean.firebasestorage.app',
+  messagingSenderId: '747731164858',
+  appId: '1:747731164858:web:a6536abb6b4c570249ec83',
+};
 const BASE_KEY = 'abyss-rod-v1', SESSION_KEY = 'abyss-rod-session';
 let ACCOUNT = null, KEY = BASE_KEY; // guest keeps the original slot, so old saves carry over
 const fresh = () => ({ gold: 0, rod: 0, line: 1, bait: 1, harpoon: 1, dex: {}, sound: true,
