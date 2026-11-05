@@ -170,6 +170,40 @@ button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 .danger-btn { padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(240, 117, 96, .5); background: transparent; color: var(--coral); cursor: pointer; }
 .danger-btn.armed { background: var(--coral); color: #250a05; }
 
+.chip.account { align-items: center; gap: 8px; padding-left: 6px; }
+.chip.account b { max-width: 9em; overflow: hidden; text-overflow: ellipsis; font-size: 15px; }
+.avatar { width: 24px; height: 24px; border-radius: 50%; flex: none; overflow: hidden; display: grid; place-items: center; background: var(--line); color: var(--foam); font-family: var(--display); font-size: 13px; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.login { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; background: rgba(4, 10, 18, .74); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.login-card {
+  width: min(380px, 100%); padding: 28px 24px 22px; border-radius: 18px; border: 1px solid var(--line);
+  background: var(--hull); box-shadow: 0 24px 60px rgba(0, 0, 0, .5);
+  display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+}
+.login-card > svg { width: 44px; height: 44px; }
+.login-card h2 { margin: 4px 0 0; font-family: var(--display); font-weight: 400; font-size: 32px; line-height: 1.1; }
+.login-sub { margin: 0 0 14px; color: var(--mist); font-size: 13px; }
+.login-step { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.login-step p { margin: 0; }
+.g-slot { width: 100%; min-height: 44px; display: flex; justify-content: center; }
+.g-fake {
+  width: 280px; max-width: 100%; height: 44px; border-radius: 999px; border: 1px solid var(--line);
+  background: #131314; color: var(--mist); display: flex; align-items: center; justify-content: center; gap: 10px; cursor: not-allowed;
+}
+.g-fake svg { width: 18px; height: 18px; opacity: .6; }
+.g-note { font-size: 12px; color: var(--coral); }
+.login-fine { font-size: 12px; color: var(--mist); }
+.or { width: 100%; display: flex; align-items: center; gap: 10px; color: var(--mist); font-size: 12px; }
+.or::before, .or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.login-btn {
+  width: 280px; max-width: 100%; height: 44px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--hull-2); color: var(--foam); font-family: var(--display); font-size: 17px; cursor: pointer;
+}
+.login-btn:hover { border-color: var(--mist); }
+.login-btn.primary { background: var(--brass); border-color: var(--brass); color: #1d1405; }
+.login-btn.primary:hover { background: #edc164; }
+
 @media (max-width: 880px) {
   .app { height: auto; min-height: 100%; }
   .layout { grid-template-columns: minmax(0, 1fr); }
@@ -197,6 +231,8 @@ button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
       <div class="chip"><span class="chip-label">낚싯대</span><b id="rodText">대나무 낚싯대</b></div>
       <div class="chip"><span class="chip-label">한계 수심</span><b id="depthText">40m</b></div>
       <button class="ghost" id="soundBtn" type="button">소리 켬</button>
+      <div class="chip account" id="accountChip" hidden><span class="avatar" id="accAvatar" aria-hidden="true"></span><b id="accName">게스트</b></div>
+      <button class="ghost" id="logoutBtn" type="button" hidden>로그아웃</button>
     </div>
   </header>
   <main class="layout">
@@ -216,6 +252,27 @@ button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
       <div class="tabpanel" id="panel-log" role="tabpanel" aria-labelledby="tab-log" hidden></div>
     </aside>
   </main>
+</div>
+
+<div class="login" id="login" hidden>
+  <div class="login-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3v15a6 6 0 1 1-12 0" fill="none" stroke="#e2b04a" stroke-width="3" stroke-linecap="round"/><path d="M4 18l-2.5 3.5" stroke="#e2b04a" stroke-width="3" stroke-linecap="round"/><circle cx="16" cy="3.5" r="2.5" fill="#e6f0ef"/></svg>
+    <h2 id="loginTitle">심연의 낚싯대</h2>
+    <p class="login-sub">깊이 던질수록 괴물이 나온다</p>
+    <div class="login-step" id="loginMain">
+      <div class="g-slot" id="gBtn"></div>
+      <p class="g-note" id="gNote" hidden></p>
+      <div class="or"><span>또는</span></div>
+      <button class="login-btn" id="guestBtn" type="button">게스트로 시작</button>
+      <p class="login-fine">게스트 기록은 이 브라우저에만 저장돼요.<br>구글로 로그인하면 계정마다 기록을 따로 저장해요.</p>
+    </div>
+    <div class="login-step" id="loginMerge" hidden>
+      <p><b id="mergeName"></b>님, 환영해요!<br>이 브라우저에 게스트로 하던 기록이 있어요.</p>
+      <p class="login-fine" id="mergeInfo"></p>
+      <button class="login-btn primary" id="mergeYes" type="button">게스트 기록 이어가기</button>
+      <button class="login-btn" id="mergeNo" type="button">새로 시작</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -427,12 +484,19 @@ const lineStr = (l = S.line) => 6 * Math.pow(1.45, l - 1);
 const biteChance = (l = S.bait) => 0.32 + 0.09 * l;
 
 /* ---------- save ---------- */
-const KEY = 'abyss-rod-v1';
+/* 구글 로그인: Google Cloud 콘솔에서 만든 'OAuth 2.0 웹 클라이언트 ID'를 넣으면 켜져요 (README 참고). */
+const GOOGLE_CLIENT_ID = '';
+const BASE_KEY = 'abyss-rod-v1', SESSION_KEY = 'abyss-rod-session';
+let ACCOUNT = null, KEY = BASE_KEY; // guest keeps the original slot, so old saves carry over
 const fresh = () => ({ gold: 0, rod: 0, line: 1, bait: 1, harpoon: 1, dex: {}, sound: true,
   stats: { catches: 0, monsters: 0, earned: 0, snaps: 0, escapes: 0, raidsWon: 0, raidsLost: 0, deepest: 0, biggest: null } });
 let S = fresh();
-try { const raw = localStorage.getItem(KEY); if (raw) { const d = JSON.parse(raw); S = Object.assign(fresh(), d); S.stats = Object.assign(fresh().stats, d.stats || {}); } } catch (e) {}
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+const slotKey = acc => acc && acc.type === 'google' ? `${BASE_KEY}:g:${acc.sub}` : BASE_KEY;
+function readSave(key) {
+  try { const raw = localStorage.getItem(key); if (raw) { const d = JSON.parse(raw), s = Object.assign(fresh(), d); s.stats = Object.assign(fresh().stats, d.stats || {}); return s; } } catch (e) {}
+  return null;
+}
+const save = () => { if (!ACCOUNT) return; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 const rod = () => RODS[S.rod];
 const maxDepth = () => rod().depth;
 const zoneIndex = m => { for (let i = ZONES.length - 1; i >= 0; i--) if (m >= ZONES[i].from) return i; return 0; };
@@ -1023,6 +1087,7 @@ function clearInterest() { for (const f of G.fish) f.interested = false; }
 
 /* ---------- input ---------- */
 function pressStart() {
+  if (!ACCOUNT) return;
   ensureAudio();
   switch (G.state) {
     case 'idle': G.state = 'charging'; G.chargeT = 0; G.charge = 0; break;
@@ -1044,6 +1109,7 @@ function doCast() {
 cvs.addEventListener('pointerdown', e => {
   e.preventDefault(); cvs.focus({ preventScroll: true });
   try { cvs.setPointerCapture(e.pointerId); } catch (_) {}
+  if (!ACCOUNT) return;
   if (G.state === 'raid') { ensureAudio(); const r = cvs.getBoundingClientRect(); raidHit(e.clientX - r.left, e.clientY - r.top + G.camY); return; }
   pressStart();
 });
@@ -1054,6 +1120,7 @@ window.addEventListener('keydown', e => {
   if (e.code !== 'Space' && e.key !== ' ') return;
   const tag = e.target && e.target.tagName;
   if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if (!ACCOUNT) return;
   e.preventDefault(); if (e.repeat) return;
   if (G.state === 'raid') { ensureAudio(); const tn = G.raid && G.raid.tent.find(x => !x.dead); if (tn) raidStrike(tn); return; }
   pressStart();
@@ -1278,7 +1345,7 @@ function update(dt) {
     case 'raid': updateRaid(dt); break;
   }
   if (G.state === 'idle' || G.state === 'charging') { const tip = rodTip(); G.hook.x = tip.x + Math.sin(G.t * 2) * 2; G.hook.y = tip.y + 30; }
-  if ((G.state === 'idle' || G.state === 'waiting' || G.state === 'sinking') && S.stats.catches >= 3) {
+  if ((G.state === 'idle' || G.state === 'waiting' || G.state === 'sinking') && S.stats.catches >= 3 && ACCOUNT) {
     G.raidCd -= dt; if (G.raidCd <= 0) startRaid();
   }
   if (G.trophy) { G.trophy.t += dt / 0.7; if (G.trophy.t >= 1) G.trophy = null; }
@@ -1745,7 +1812,7 @@ document.querySelector('.panel').addEventListener('click', e => {
       const on = b === tab; b.setAttribute('aria-selected', String(on)); $('panel-' + b.dataset.tab).hidden = !on;
     }
     if (tab.dataset.tab === 'dex' && dexDirty) { renderDex(); dexDirty = false; }
-    try { localStorage.setItem(KEY + '-tab', tab.dataset.tab); } catch (_) {}
+    try { localStorage.setItem(BASE_KEY + '-tab', tab.dataset.tab); } catch (_) {}
     return;
   }
   const b = e.target.closest('[data-buy]');
@@ -1773,9 +1840,96 @@ function buy(kind) {
 }
 $('soundBtn').addEventListener('click', e => { S.sound = !S.sound; ensureAudio(); save(); renderHeader(); e.currentTarget.blur(); });
 
+/* ---------- login (guest / Google) ---------- */
+const esc = v => String(v).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+const G_LOGO = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.9 6.2C12.4 13.7 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.5 28.5c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-7.9-6.2C1 16.6 0 20.2 0 24s1 7.4 2.6 10.7l7.9-6.2z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.2-13.5-10l-7.9 6.2C6.6 42.6 14.6 48 24 48z"/></svg>';
+let gisState = 'idle', pendingAcc = null;
+function decodeJwt(tok) {
+  try {
+    const b64 = tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b64), ch => ch.charCodeAt(0))));
+  } catch (_) { return null; }
+}
+function googleUnavailable(msg) {
+  $('gBtn').innerHTML = `<button class="g-fake" type="button" disabled>${G_LOGO}<span>Google 계정으로 로그인</span></button>`;
+  $('gNote').textContent = msg; $('gNote').hidden = false;
+}
+function initGoogle() {
+  if (!GOOGLE_CLIENT_ID) return googleUnavailable('구글 로그인은 아직 설정되지 않았어요. 지금은 게스트로 시작할 수 있어요.');
+  if (location.protocol === 'file:') return googleUnavailable('구글 로그인은 웹 주소(https)로 열었을 때만 돼요. 지금은 게스트로 시작할 수 있어요.');
+  if (gisState !== 'idle') return;
+  gisState = 'loading';
+  const sc = document.createElement('script');
+  sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true;
+  sc.onload = () => {
+    gisState = 'ready'; $('gNote').hidden = true;
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential, ux_mode: 'popup' });
+    google.accounts.id.renderButton($('gBtn'), { theme: 'filled_black', size: 'large', shape: 'pill', text: 'signin_with', locale: 'ko', width: 280 });
+  };
+  sc.onerror = () => { gisState = 'idle'; googleUnavailable('구글 로그인을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.'); };
+  document.head.appendChild(sc);
+}
+// No server here, so the ID token only tells us who signed in; it picks the save slot on this device.
+function onGoogleCredential(resp) {
+  const p = resp && resp.credential && decodeJwt(resp.credential);
+  if (!p || !p.sub || p.aud !== GOOGLE_CLIENT_ID) { $('gNote').textContent = '로그인 정보를 확인하지 못했어요. 다시 시도해 주세요.'; $('gNote').hidden = false; return; }
+  const acc = { type: 'google', sub: p.sub, name: p.name || p.email || '구글 사용자', email: p.email || '', picture: p.picture || '' };
+  const mine = readSave(slotKey(acc)), guest = readSave(BASE_KEY);
+  if (!mine && guest && guest.stats.catches > 0) {
+    pendingAcc = acc;
+    $('mergeName').textContent = acc.name;
+    $('mergeInfo').textContent = `낚은 물고기 ${fmtN(guest.stats.catches)}마리 · 금화 ${fmtN(guest.gold)} G · ${RODS[guest.rod].name}`;
+    $('loginMain').hidden = true; $('loginMerge').hidden = false; $('mergeYes').focus();
+    return;
+  }
+  setAccount(acc);
+}
+function setAccount(acc, quiet) {
+  ACCOUNT = acc; KEY = slotKey(acc);
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(acc)); } catch (_) {}
+  S = readSave(KEY) || fresh();
+  G.state = 'idle'; G.fight = null; G.bite = null; G.raid = null; G.holding = false; G.raidCd = rand(80, 140); clearInterest();
+  save(); renderAll(); renderAccount();
+  $('login').hidden = true; cvs.focus({ preventScroll: true });
+  if (!quiet) toast(acc.type === 'google' ? `<b>${esc(acc.name)}</b>님, 어서 오세요!` : '<b>게스트</b>로 시작해요. 기록은 이 브라우저에 저장돼요.', 'good', 2600);
+}
+function showLogin() {
+  G.state = 'idle'; G.fight = null; G.bite = null; G.raid = null; G.holding = false; clearInterest();
+  $('loginMain').hidden = false; $('loginMerge').hidden = true;
+  $('login').hidden = false; initGoogle(); $('guestBtn').focus();
+}
+function logout() {
+  if (ACCOUNT && ACCOUNT.type === 'google' && window.google && google.accounts) google.accounts.id.disableAutoSelect();
+  save(); ACCOUNT = null; KEY = BASE_KEY;
+  try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
+  renderAccount(); showLogin();
+}
+function renderAccount() {
+  const on = !!ACCOUNT, g = on && ACCOUNT.type === 'google';
+  $('accountChip').hidden = !on; $('logoutBtn').hidden = !on;
+  if (!on) return;
+  $('accName').textContent = g ? ACCOUNT.name : '게스트';
+  $('accountChip').title = g ? ACCOUNT.email : '게스트 기록은 이 브라우저에만 저장돼요';
+  $('logoutBtn').textContent = g ? '로그아웃' : '계정 바꾸기';
+  const av = $('accAvatar'); av.textContent = '';
+  if (g && ACCOUNT.picture) { const im = new Image(); im.alt = ''; im.referrerPolicy = 'no-referrer'; im.src = ACCOUNT.picture; im.onerror = () => { av.textContent = ACCOUNT.name.slice(0, 1); }; av.appendChild(im); }
+  else av.textContent = g ? ACCOUNT.name.slice(0, 1) : '게';
+}
+$('guestBtn').addEventListener('click', () => setAccount({ type: 'guest' }));
+$('mergeYes').addEventListener('click', () => {
+  const guest = readSave(BASE_KEY);
+  if (guest) try { localStorage.setItem(slotKey(pendingAcc), JSON.stringify(guest)); } catch (_) {}
+  setAccount(pendingAcc);
+});
+$('mergeNo').addEventListener('click', () => setAccount(pendingAcc));
+$('logoutBtn').addEventListener('click', e => { e.currentTarget.blur(); logout(); });
+
 /* ---------- boot ---------- */
-renderAll();
-try { const tb = localStorage.getItem(KEY + '-tab'); if (tb && tb !== 'shop') document.querySelector(`[data-tab="${tb}"]`)?.click(); } catch (_) {}
+let session = null;
+try { session = JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (_) {}
+if (session && (session.type === 'guest' || (session.type === 'google' && session.sub))) setAccount(session, true);
+else { renderAll(); renderAccount(); showLogin(); }
+try { const tb = localStorage.getItem(BASE_KEY + '-tab'); if (tb && tb !== 'shop') document.querySelector(`[data-tab="${tb}"]`)?.click(); } catch (_) {}
 G.camY = camTarget();
 for (let i = 0; i < 6; i++) spawnAt(rand(3, Math.max(8, (G.camY + H) / PX - 4)), rand(40, W - 40));
 let last = performance.now();
