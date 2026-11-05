@@ -170,6 +170,48 @@ button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 .danger-btn { padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(240, 117, 96, .5); background: transparent; color: var(--coral); cursor: pointer; }
 .danger-btn.armed { background: var(--coral); color: #250a05; }
 
+.chip.account { align-items: center; gap: 8px; padding-left: 6px; }
+.chip.account b { max-width: 9em; overflow: hidden; text-overflow: ellipsis; font-size: 15px; }
+.avatar { width: 24px; height: 24px; border-radius: 50%; flex: none; overflow: hidden; display: grid; place-items: center; background: var(--line); color: var(--foam); font-family: var(--display); font-size: 13px; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.login { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; background: rgba(4, 10, 18, .74); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.login-card {
+  width: min(380px, 100%); padding: 28px 24px 22px; border-radius: 18px; border: 1px solid var(--line);
+  background: var(--hull); box-shadow: 0 24px 60px rgba(0, 0, 0, .5);
+  display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+}
+.login-card > svg { width: 44px; height: 44px; }
+.login-card h2 { margin: 4px 0 0; font-family: var(--display); font-weight: 400; font-size: 32px; line-height: 1.1; }
+.login-sub { margin: 0 0 14px; color: var(--mist); font-size: 13px; }
+.login-step { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.login-step p { margin: 0; }
+.g-slot { width: 100%; min-height: 44px; display: flex; justify-content: center; }
+.g-btn {
+  width: 280px; max-width: 100%; height: 44px; border-radius: 999px; border: 1px solid #8e918f;
+  background: #131314; color: #e3e3e3; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;
+}
+.g-btn:hover:not(:disabled) { background: #1f2021; }
+.g-btn svg { width: 18px; height: 18px; flex: none; }
+.g-btn:disabled { border-color: var(--line); color: var(--mist); cursor: not-allowed; }
+.g-btn:disabled svg { opacity: .6; }
+.g-note { font-size: 12px; color: var(--coral); }
+.g-note.info { color: var(--mist); }
+.sync { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--mist); }
+.sync.ok { background: var(--kelp); }
+.sync.wait { background: var(--brass); }
+.sync.err { background: var(--coral); }
+.login-fine { font-size: 12px; color: var(--mist); }
+.or { width: 100%; display: flex; align-items: center; gap: 10px; color: var(--mist); font-size: 12px; }
+.or::before, .or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.login-btn {
+  width: 280px; max-width: 100%; height: 44px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--hull-2); color: var(--foam); font-family: var(--display); font-size: 17px; cursor: pointer;
+}
+.login-btn:hover { border-color: var(--mist); }
+.login-btn.primary { background: var(--brass); border-color: var(--brass); color: #1d1405; }
+.login-btn.primary:hover { background: #edc164; }
+
 @media (max-width: 880px) {
   .app { height: auto; min-height: 100%; }
   .layout { grid-template-columns: minmax(0, 1fr); }
@@ -197,6 +239,8 @@ button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
       <div class="chip"><span class="chip-label">낚싯대</span><b id="rodText">대나무 낚싯대</b></div>
       <div class="chip"><span class="chip-label">한계 수심</span><b id="depthText">40m</b></div>
       <button class="ghost" id="soundBtn" type="button">소리 켬</button>
+      <div class="chip account" id="accountChip" hidden><span class="avatar" id="accAvatar" aria-hidden="true"></span><b id="accName">게스트</b><span class="sync" id="syncDot" hidden></span></div>
+      <button class="ghost" id="logoutBtn" type="button" hidden>로그아웃</button>
     </div>
   </header>
   <main class="layout">
@@ -216,6 +260,27 @@ button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
       <div class="tabpanel" id="panel-log" role="tabpanel" aria-labelledby="tab-log" hidden></div>
     </aside>
   </main>
+</div>
+
+<div class="login" id="login" hidden>
+  <div class="login-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3v15a6 6 0 1 1-12 0" fill="none" stroke="#e2b04a" stroke-width="3" stroke-linecap="round"/><path d="M4 18l-2.5 3.5" stroke="#e2b04a" stroke-width="3" stroke-linecap="round"/><circle cx="16" cy="3.5" r="2.5" fill="#e6f0ef"/></svg>
+    <h2 id="loginTitle">심연의 낚싯대</h2>
+    <p class="login-sub">깊이 던질수록 괴물이 나온다</p>
+    <div class="login-step" id="loginMain">
+      <div class="g-slot" id="gBtn"></div>
+      <p class="g-note" id="gNote" hidden></p>
+      <div class="or"><span>또는</span></div>
+      <button class="login-btn" id="guestBtn" type="button">게스트로 시작</button>
+      <p class="login-fine">게스트 기록은 이 브라우저에만 저장돼요.<br>구글로 로그인하면 클라우드에 저장돼서 다른 기기에서도 이어 할 수 있어요.</p>
+    </div>
+    <div class="login-step" id="loginMerge" hidden>
+      <p><b id="mergeName"></b>님, 환영해요!<br>이 브라우저에 게스트로 하던 기록이 있어요.</p>
+      <p class="login-fine" id="mergeInfo"></p>
+      <button class="login-btn primary" id="mergeYes" type="button">게스트 기록 이어가기</button>
+      <button class="login-btn" id="mergeNo" type="button">새로 시작</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -279,7 +344,142 @@ const SPECIES = [
   { id: 'starwhale',  name: '별빛 고래', zone: 4, rar: 2, w: [3000, 6000], hp: 6000, pull: 95, value: 20000, color: '#2b3f7a', len: 160, shape: 'whale', glow: true },
   { id: 'leviathan',  name: '심해 군주 레비아탄', zone: 4, rar: 4, kind: 'monster', boss: true, w: [20000, 30000], hp: 12000, pull: 150, value: 60000, color: '#1f5a5a', len: 240, shape: 'eel', special: 'boss', glow: true, note: '모든 기술을 쓰는 바다의 주인' },
 ];
+/* 200 added species: 'name|color[|rarity][|special][|traits]'. Traits pin a few looks
+   (b body, t tail, d dorsal, p pattern, m mouth, x extra, e eye, f pectoral, c2/c3 colors);
+   everything else comes from a fixed seed, so each fish always looks the same and no two match. */
+const NEW_FISH = [
+  [ // 얕은 바다
+    '정어리|7fa6bd|b=slim,p=dots', '꽁치|5b7fa8|b=long,m=beak', '학공치|9cc3cf|b=long,m=jaw', '숭어|8a9aa6', '농어|9fb0b8|p=dots',
+    '감성돔|6d7884|b=tall', '볼락|8b5e4a|e=big', '조피볼락|5a5248|p=marble,d=spiny', '쥐노래미|7c6a3e|p=marble|2', '쥐치|b9a88a|b=tall,m=tube,d=filament',
+    '졸복|d8c58e|b=round,x=spikes,p=spots|2', '문절망둑|a89a7c|p=saddle,b=flathead', '베도라치|8c7b55|b=long,d=long', '용치놀래기|e48a5a|p=lines', '황놀래기|e8b23c',
+    '자리돔|4f5f7a|b=tall', '흰동가리|f07b2a|c2=ffffff,p=vbar,t=round|2', '파랑돔|2f7fe0|2', '노랑촉수|f2c14e|x=barbel|2', '성대|c25a4a|b=flathead,f=wing',
+    '양태|8b7a5c|b=flathead,p=spots', '보리멸|d8d0b8|b=slim,p=none', '전어|a7b9c4|p=dots', '밴댕이|c4d4dc|b=slim', '청어|46708f|b=slim,p=grad',
+    '까나리|b8c9b0|b=long', '빙어|d6e4ea|b=slim', '줄도화돔|e9a3a0|p=hstripe', '범돔|e6c94c|p=vbar|2', '나비고기|f3d33f|p=eyespot,b=tall|2',
+    '두동가리돔|f2f0e6|c2=1c1c1c,p=vbar,d=filament|2', '쏨뱅이|b8452f|d=spiny,p=marble', '독가시치|7e7a52|d=spiny', '벵에돔|3e4a58', '돌돔|c9c2a8|c2=2a2a2a,p=vbar|2',
+    '강담돔|ddd2b4|c2=2b2b2b,p=spots|2', '블루탱|2d6fd6|c2=10204a,t=square|2', '실고기|9b8f63|b=long,m=tube',
+    '가시돌이 괴어|c06a8a|3|dive|x=spikes,b=round', '산호껍질 괴어|e07a5a|3|armor|x=crown,p=scales',
+  ],
+  [ // 푸른 중층
+    '삼치|5f86a6|b=arrow,p=spots', '갈치|d9e2ea|b=long,t=point,m=jaw,d=long', '연어|c87a6a|p=dots', '송어|8aa07a|p=spots', '대구|9a8d6e|x=barbel,p=marble',
+    '명태|8d8a7a|b=slim', '민어|a49a8a|2', '부세|d9b54a', '참조기|e2c25a|b=slim', '옥돔|e78a7a|b=flathead|2',
+    '능성어|7a5a48|p=vbar', '붉바리|d1623e|p=spots|2', '자바리|6e5a44|p=marble|2', '달고기|b6b2a0|p=eyespot,b=tall', '병어|cfd6dc|b=tall,t=lunate',
+    '날치|4f7fb8|b=arrow,f=wing', '만새기|3fb38a|c2=e8d24a,p=half,b=flathead,d=long|2', '꼬치고기|9aa8b0|b=long,m=jaw', '동갈치|6c9ab0|b=long,m=beak', '가다랑어|3d5a8a|p=hstripe,t=lunate',
+    '황다랑어|3c5f8f|c2=f0d040,t=lunate,d=filament|2', '눈다랑어|2f466e|e=big,t=lunate|2', '잿방어|8c7a5c|p=band', '부시리|6f9bb6|c2=e8d070,p=hstripe', '붕장어|7a6a54|b=long,t=point,p=dots',
+    '갯장어|8a7d6a|b=long,t=point,m=jaw|2', '쏠배감펭|c84a3a|c2=f5e6d8,p=vbar,d=spiny,f=wing|2', '쑤기미|6a4a3a|d=spiny,p=marble', '횟대|a26a4a|b=flathead', '감펭|d86a52|d=spiny',
+    '불볼락|d86a4a|e=big', '황볼락|d4a04a', '개볼락|5a4a3a', '군평선이|d0c8a8|p=vbar', '벤자리|8a9a8a|p=hstripe',
+    '황돔|e9a06a|2', '실꼬리돔|e88a9a|t=fork,d=filament', '혹돔|c75a5a|b=deep|2',
+    '쌍칼 갈치왕|e0e8f0|3|dive|b=long,m=sword', '번개 비늘돔|9fd8ff|3|shock|x=glowdots',
+  ],
+  [ // 어스름 심해
+    '청새치|2f4f8a|m=sword,d=sail|2', '황새치|4a4a6a|m=sword,t=lunate', '돛새치|3a5a9a|m=sword,d=sail,p=vbar|2', '눈볼대|e0603a|e=big', '금눈돔|d8402a|e=gold,d=spiny',
+    '은대구|4a4e56', '메로|5a5850|m=jaw', '오렌지라피|e8803a|b=deep', '산갈치|d8dce4|b=long,d=long,x=crown,c3=e04a4a|2', '투라치|c8ccd4|b=long,d=long',
+    '홍살치|d8503a|d=spiny,f=wing', '꼬리민태|8a8478|t=point,x=barbel', '장문볼락|c25a3a', '매퉁이|9a8a7a|m=jaw,p=spots', '샛비늘치|6a7a8a|x=glowdots',
+    '앨퉁이|9aa4b0|x=glowdots,b=slim', '은줄멸|b8c4cc|p=hstripe,b=slim', '흑점샛비늘치|5a6a7a|x=glowdots,p=spots', '도화돔|e86a7a|e=big', '눈퉁멸|aab0b8|e=big|2',
+    '노을비늘치|e88a5a|p=grad', '달그림자고기|8a96b8|p=half', '유리지느러미|bfe3ee|t=double', '은빛창고기|c8d0d8|b=arrow,m=beak', '쌍뿔도미|b86a5a|x=horn',
+    '보랏빛 꼬리치|8a5ab8|t=whip', '초승달고기|d8c07a|t=lunate,b=tall', '안개비늘치|9aa8b8|p=scales', '등대고기|3a3a5a|x=lure|2', '푸른 촛대고기|3a6ab0|x=glowdots',
+    '구릿빛 갑옷고기|b0703a|p=scales|2', '가시왕관어|7a4a6a|x=crown,d=spiny', '해무 농어|6a7a8a|p=marble', '산호눈고기|d86a8a|e=red', '수염 심해대구|7a6a5a|x=whisker',
+    '붉은 비단고기|c83a4a|t=fan,d=sail|2', '진주점박이|5a6a8a|c2=f0f0e0,p=dots|2', '심해 줄무늬돔|4a5a7a|p=vbar',
+    '먹물뿜는 그림자어|2a2238|3|ink|x=lure', '톱니 강철어|8a8f96|3|armor|x=spikes',
+  ],
+  [ // 칠흑 해구
+    '큰입멸|1e1e2a|m=big,b=long,t=whip', '독사고기|2a3448|m=big,x=glowdots', '흑룡어|141420|b=long,x=barbel,e=glow', '풍선장어|2a2030|b=long,m=big,t=whip|2', '도끼고기|a8b4c4|b=tall,x=glowdots',
+    '통눈고기|3a4a5a|e=tele|2', '송곳니고기|3a2a2a|m=big,e=tiny', '꼼치|b8a8b8|b=round', '심해 꼼치|d8c8d8|b=round,e=tiny', '털아귀|3a3030|x=lure,m=big|2',
+    '삼각대고기|5a5a6a|x=whisker', '씨앗별고기|2a3a5a|x=glowdots', '칠흑비늘치|1a1a28|p=scales', '해구 등불치|2a3a5a|x=lure', '그림자송곳니|2a2a3a|m=jaw',
+    '녹슨 갑옷고기|7a4a2a|p=scales,x=spikes|2', '유령지느러미|cfd8e8|t=double', '묵빛 창어|1e2a3a|m=sword', '별가시고기|3a4a7a|x=spikes,p=dots', '실뱀고기|3a5a4a|b=long,t=point',
+    '은화고기|c0c8d0|p=dots', '빙하눈고기|a8d8e8|e=glow', '화산 비늘돔|a83a2a|p=zigzag', '청동 수염어|8a6a3a|x=whisker', '해골 지느러미|d8d0c0|p=vbar,c2=2a2a2a',
+    '보라 촉수어|6a3a8a|x=barbel', '붉은 등불고기|7a2a3a|x=lure|2', '쌍등불 멸|2a3048|x=glowdots,b=slim', '가시투성이 복|5a5a3a|b=round,x=spikes', '두갈래 꼬리치|4a4a5a|t=split',
+    '긴지느러미 유령어|8a9ab0|d=filament,t=whip', '먹빛 나비고기|2a2a3a|p=eyespot,b=tall', '푸른 불꽃어|2a5a9a|p=grad|2', '비단 칼날고기|9aa0b0|b=arrow', '깊은잠 고기|3a3a4a|e=tiny',
+    '해구 바늘고기|5a6a6a|b=long,m=tube', '황혼 금비늘|b89a3a|p=scales|2', '심해 앵무고기|4a8a7a|m=beak|2',
+    '심해 폭풍장어|3a4a7a|3|shock|b=long,t=point', '해구 파쇄어|4a3a3a|3|dive|m=jaw,x=horn',
+  ],
+  [ // 심연
+    '심연 수정어|b8e8f8|x=glowdots', '공허비늘치|1a1028|p=scales', '별무리고기|1a2a5a|c2=fff3c4,p=dots', '은하 지느러미|2a1a5a|t=double', '오로라고기|3ab88a|p=grad',
+    '달빛 창어|c8d0e8|m=sword', '태고의 갑주어|5a5a4a|x=spikes,p=checker|2', '고룡 수염어|3a5a4a|x=whisker|2', '유성꼬리고기|e8c86a|t=whip', '흑요석 고기|141418|p=marble',
+    '진주빛 해룡|e8e0f0|b=long,x=crown|2', '심해 왕관어|6a3a8a|x=crown', '영혼 등불치|2a2a4a|x=lure', '꿈결 비늘치|9a8ae8|p=marble', '시간의 실고기|8a8aa8|b=long,m=tube',
+    '얼음 송곳니|a8c8e8|m=big', '불꽃 심연어|e85a3a|p=zigzag', '은하수 멸|2a3a7a|b=slim,x=glowdots', '그림자 창고기|1a1a2a|b=arrow,m=beak', '태초의 눈고기|3a2a4a|e=big|2',
+    '천둥비늘치|4a5a9a|p=zigzag', '심연 나비고기|3a2a6a|b=tall,p=eyespot', '고요의 꼬리치|5a6a8a|t=fan', '별자리고기|1a2040|c2=d8e8ff,p=spots', '심연 비단돔|7a2a5a|d=sail',
+    '검은 태양어|0e0e14|c2=e8a03a,p=diag', '푸른 유령어|6ab8e8|t=double', '공허의 턱고기|2a2a2a|m=jaw', '수정 가시어|c8e8ff|x=spikes', '보석 비늘치|3ab0a0|p=scales|2',
+    '낙조 지느러미|e8705a|d=sail,t=fan|2', '월광 꼼치|d8d8f0|b=round', '깊은숨 고기|2a3a3a|e=tiny', '심연 등불 창어|1a2a3a|x=lure,m=sword|2', '녹색 별빛어|2a6a4a|x=glowdots',
+    '아득한 줄무늬어|2a3a6a|p=hstripe', '심연 거울고기|c0c8d8|b=tall|2', '혜성 비늘치|d8e0ff|p=lines|2',
+    '심연의 파수꾼|3a2a5a|3|armor|x=crown,e=glow', '공허를 삼키는 자|1a0a2a|3|ink|m=big,x=lure',
+  ],
+];
+(function addProcSpecies() {
+  let seed = 20261105;
+  const rng = () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const pick = a => a[Math.floor(rng() * a.length)];
+  const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const hex = a => '#' + a.map(v => clamp(Math.round(v), 0, 255).toString(16).padStart(2, '0')).join('');
+  const shd = (h, a) => hex(rgb(h).map(v => a < 0 ? v * (1 + a) : v + (255 - v) * a));
+  const BODIES = {
+    oval: { hr: 0.42, nose: 0.5 }, slim: { hr: 0.27, nose: 0.7 }, tall: { hr: 0.66, nose: 0.35 }, round: { hr: 0.6, nose: 0.1 },
+    arrow: { hr: 0.32, nose: 0.95 }, deep: { hr: 0.5, nose: 0.3, hump: 0.16 }, flathead: { hr: 0.36, nose: 0.2, hump: -0.08 }, long: { hr: 0.2, nose: 0.6 },
+  };
+  const BODY_KEYS = Object.keys(BODIES);
+  const TAILS = ['fork', 'round', 'lunate', 'point', 'fan', 'square', 'whip', 'double', 'split'];
+  const DORSALS = ['none', 'tri', 'sail', 'spiny', 'long', 'double', 'crest', 'filament'];
+  const PATTERNS = ['none', 'vbar', 'hstripe', 'spots', 'dots', 'grad', 'scales', 'band', 'eyespot', 'zigzag', 'marble', 'saddle', 'checker', 'half', 'diag', 'lines'];
+  const MOUTHS = ['small', 'small', 'big', 'beak', 'under', 'tube', 'jaw'], MOUTHS_DEEP = ['small', 'big', 'big', 'jaw', 'jaw', 'under', 'sword'];
+  const EXTRAS = ['none', 'none', 'none', 'barbel', 'horn', 'spikes', 'whisker', 'crown'];
+  const EXTRAS_MID = ['none', 'none', 'barbel', 'horn', 'spikes', 'whisker', 'crown', 'lure', 'glowdots'];
+  const EXTRAS_DEEP = ['none', 'barbel', 'horn', 'spikes', 'whisker', 'crown', 'lure', 'lure', 'glowdots', 'glowdots'];
+  const EYES = ['normal', 'normal', 'normal', 'big', 'tiny', 'red', 'gold'], EYES_DEEP = ['normal', 'big', 'big', 'tiny', 'red', 'gold', 'glow', 'glow', 'tele'];
+  const ACCENTS = ['#f2d14a', '#ffffff', '#1c2430', '#e85a4a', '#4ab0e0', '#7fe0b0', '#f0a0c0', '#a080f0', '#ff9d3b'];
+  const ZSTAT = [
+    { hp: [14, 40],     pull: [2, 4.5],  val: [5, 28],       len: [14, 34],  w: [0.04, 1.5] },
+    { hp: [55, 120],    pull: [6.5, 11.5], val: [40, 110],   len: [28, 52],  w: [0.8, 9] },
+    { hp: [200, 400],   pull: [17, 24],  val: [240, 380],    len: [34, 74],  w: [3, 150] },
+    { hp: [750, 1000],  pull: [40, 50],  val: [1100, 1800],  len: [46, 80],  w: [10, 120] },
+    { hp: [3600, 6000], pull: [82, 98],  val: [8500, 18000], len: [60, 140], w: [80, 3000] },
+  ];
+  const MUL = { 1: { hp: 1, pull: 1, val: 1, len: 1, w: 1 }, 2: { hp: 1.25, pull: 1.1, val: 1.45, len: 1.1, w: 1.3 }, 3: { hp: 3.2, pull: 1.45, val: 4.5, len: 1.45, w: 4 } };
+  const NOTE = { dive: '오래 몸부림친다', shock: '전기로 장력을 튀게 한다', ink: '먹물로 장력계를 가린다', armor: '초록 구간이 좁아진다' };
+  const usedLook = new Set(), usedColor = new Set(SPECIES.map(s => s.color));
+  let n = 0;
+  NEW_FISH.forEach((list, zone) => list.forEach(entry => {
+    n++;
+    const parts = entry.split('|'), name = parts[0], hint = {};
+    let color = '#' + parts[1], rar = 1, special = null;
+    for (const p of parts.slice(2)) {
+      if (/^\d$/.test(p)) rar = +p;
+      else if (p.includes('=')) p.split(',').forEach(kv => { const [k, v] = kv.split('='); hint[k] = v; });
+      else special = p;
+    }
+    while (usedColor.has(color)) color = shd(color, rng() < 0.5 ? 0.12 : -0.12);
+    usedColor.add(color);
+    const abyss = zone >= 3;
+    let d, look, tries = 0;
+    do {
+      const B = BODIES[hint.b || pick(BODY_KEYS)];
+      d = {
+        body: hint.b || BODY_KEYS.find(k => BODIES[k] === B), hr: B.hr + (rng() - 0.5) * 0.08, nose: clamp(B.nose + (rng() - 0.5) * 0.2, 0, 1),
+        hump: (B.hump || 0) + (rng() - 0.5) * 0.1, belly: 0.85 + rng() * 0.3,
+        tail: hint.t || pick(TAILS), dorsal: hint.d || pick(DORSALS), pat: hint.p || pick(PATTERNS),
+        mouth: hint.m || pick(zone >= 2 ? MOUTHS_DEEP : MOUTHS), extra: hint.x || pick(abyss ? EXTRAS_DEEP : zone === 2 ? EXTRAS_MID : EXTRAS),
+        eye: hint.e || pick(abyss ? EYES_DEEP : EYES), pec: hint.f || (rng() < 0.15 ? 'wing' : 'small'), n: 3 + Math.floor(rng() * 4),
+      };
+      look = [d.body, d.tail, d.dorsal, d.pat].join('/');
+    } while (usedLook.has(look) && ++tries < 60);
+    usedLook.add(look);
+    d.c2 = hint.c2 ? '#' + hint.c2 : pick([shd(color, -0.5), shd(color, 0.55), pick(ACCENTS)]);
+    d.c3 = hint.c3 ? '#' + hint.c3 : pick([shd(color, -0.25), shd(color, -0.25), shd(d.c2, 0.1), shd(color, 0.3)]);
+    d.spots = Array.from({ length: 9 + Math.floor(rng() * 5) }, () => [rng() * 0.8 - 0.38, rng() * 1.6 - 0.8, 0.5 + rng()]);
+    d.dots = Array.from({ length: 26 }, () => [rng() * 0.84 - 0.4, rng() * 1.8 - 0.9]);
+    const glow = d.extra === 'lure' || d.extra === 'glowdots' || d.eye === 'glow' || (zone === 4 && rng() < 0.4);
+    d.glowRgb = rgb(d.extra === 'lure' ? '#ffe296' : shd(d.c2 === '#1c2430' ? color : d.c2, 0.45)).join(',');
+    const Z = ZSTAT[zone], M = MUL[rar], u = rng(), r = () => rng(), mon = rar >= 3;
+    const w0 = lerp(Z.w[0], Z.w[1], Math.pow(u, 1.4)) * M.w;
+    SPECIES.push({
+      id: 'p' + String(n).padStart(3, '0'), name, zone, rar, kind: mon ? 'monster' : undefined,
+      w: [+w0.toPrecision(2), +(w0 * (1.8 + r())).toPrecision(2)],
+      hp: Math.round(lerp(Z.hp[0], Z.hp[1], r()) * M.hp), pull: +(lerp(Z.pull[0], Z.pull[1], r()) * M.pull).toFixed(1),
+      value: Math.round(lerp(Z.val[0], Z.val[1], (u + r()) / 2) * M.val), color, len: Math.round(lerp(Z.len[0], Z.len[1], u) * M.len),
+      shape: 'proc', d, glow, special: special || (mon ? 'dive' : undefined), note: mon ? NOTE[special || 'dive'] : undefined,
+    });
+  }));
+})();
 const SP = Object.fromEntries(SPECIES.map(s => [s.id, s]));
+const ZPOOL = ZONES.map((_, z) => { const g = {}; for (const s of SPECIES) if (s.zone === z) (g[s.rar] ||= []).push(s); return g; });
 const RAR_W = { 1: 60, 2: 26, 3: 12, 4: 4 };
 const BAIT_NAMES = ['갯지렁이', '새우 살', '오징어 조각', '반짝이 루어', '발광 루어', '심연의 미끼'];
 const LINE_NAMES = ['나일론 줄', '나일론 줄', '카본 줄', '카본 줄', '합사 줄', '합사 줄', '강철 와이어', '강철 와이어', '거미줄 섬유', '거미줄 섬유', '용힘줄', '용힘줄'];
@@ -292,12 +492,31 @@ const lineStr = (l = S.line) => 6 * Math.pow(1.45, l - 1);
 const biteChance = (l = S.bait) => 0.32 + 0.09 * l;
 
 /* ---------- save ---------- */
-const KEY = 'abyss-rod-v1';
+/* 구글 로그인 + 클라우드 저장(Firebase): Firebase 콘솔의 '웹 앱 구성' 객체를 그대로 붙여 넣으면 켜져요 (README 참고).
+   이 값은 비밀이 아니에요. 다른 사람이 남의 기록을 못 건드리게 막는 건 firestore.rules가 해요.
+   예) const FIREBASE_CONFIG = { apiKey: '...', authDomain: '...', projectId: '...', storageBucket: '...', messagingSenderId: '...', appId: '...' }; */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBexX2uMw2a9c3rV7eOpC5JOPInL525Vuc',
+  authDomain: 'abyss-of-the-ocean.firebaseapp.com',
+  projectId: 'abyss-of-the-ocean',
+  storageBucket: 'abyss-of-the-ocean.firebasestorage.app',
+  messagingSenderId: '747731164858',
+  appId: '1:747731164858:web:a6536abb6b4c570249ec83',
+};
+const BASE_KEY = 'abyss-rod-v1', SESSION_KEY = 'abyss-rod-session';
+let ACCOUNT = null, KEY = BASE_KEY; // guest keeps the original slot, so old saves carry over
 const fresh = () => ({ gold: 0, rod: 0, line: 1, bait: 1, harpoon: 1, dex: {}, sound: true,
   stats: { catches: 0, monsters: 0, earned: 0, snaps: 0, escapes: 0, raidsWon: 0, raidsLost: 0, deepest: 0, biggest: null } });
 let S = fresh();
-try { const raw = localStorage.getItem(KEY); if (raw) { const d = JSON.parse(raw); S = Object.assign(fresh(), d); S.stats = Object.assign(fresh().stats, d.stats || {}); } } catch (e) {}
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+// google slot is a local cache of the cloud save, so play keeps working offline
+const slotKey = acc => acc && acc.type === 'google' ? `${BASE_KEY}:fb:${acc.uid}` : BASE_KEY;
+const normalize = d => { const s = Object.assign(fresh(), d); s.stats = Object.assign(fresh().stats, d.stats || {}); return s; };
+function readSave(key) {
+  try { const raw = localStorage.getItem(key); if (raw) return normalize(JSON.parse(raw)); } catch (e) {}
+  return null;
+}
+const writeLocal = (key, data) => { try { localStorage.setItem(key, JSON.stringify(data)); } catch (e) {} };
+const save = () => { if (!ACCOUNT) return; S._t = Date.now(); writeLocal(KEY, S); if (ACCOUNT.type === 'google') cloudSave(); };
 const rod = () => RODS[S.rod];
 const maxDepth = () => rod().depth;
 const zoneIndex = m => { for (let i = ZONES.length - 1; i >= 0; i--) if (m >= ZONES[i].from) return i; return 0; };
@@ -587,7 +806,184 @@ function shpSlime(c, sp, L, t) {
   c.beginPath(); c.ellipse(R * 0.3, R * 0.2, R * 0.1, R * (0.06 + 0.04 * Math.sin(t * 5)), 0, 0, TAU); c.fill();
   c.fillStyle = 'rgba(255,170,170,0.5)'; c.beginPath(); c.arc(R * 0.62, R * 0.05, R * 0.08, 0, TAU); c.fill();
 }
-const SHAPES = { fish: shpFish, slim: (c, s, L, t) => shpFish(c, s, L, t, 0.28), flat: shpFlat, shark: shpShark, eel: shpEel, jelly: shpJelly, squid: shpSquid, crab: shpCrab, angler: shpAngler, sunfish: shpSunfish, whale: shpWhale, ray: shpRay, slime: shpSlime };
+/* ---------- procedural fish (the 200 added species) ---------- */
+function procGeo(sp) {
+  const d = sp.d, L = sp.len, Hh = L * d.hr;
+  return { L, Hh, nx: L * 0.46, ny: Hh * 0.04, top: Hh * (0.5 + d.hump), bot: Hh * 0.5 * d.belly, tx: -L * 0.42, pd: Math.max(1, Hh * 0.13) };
+}
+function procBody(c, d, g) {
+  const { L, nx, ny, top, bot, tx, pd } = g, k = (1 - d.nose) * 0.95, cx = lerp(L * 0.44, L * 0.12, d.nose);
+  c.beginPath(); c.moveTo(nx, ny);
+  c.bezierCurveTo(nx, ny - top * k, cx, -top, L * 0.02, -top);
+  c.bezierCurveTo(-L * 0.2, -top, -L * 0.33, -pd * 1.7, tx, -pd);
+  c.lineTo(tx, pd);
+  c.bezierCurveTo(-L * 0.33, pd * 1.7, -L * 0.2, bot, L * 0.02, bot);
+  c.bezierCurveTo(cx, bot, nx, ny + bot * k, nx, ny);
+  c.closePath();
+}
+function procTail(c, d, g, t) {
+  const { L, Hh, pd } = g;
+  c.beginPath();
+  switch (d.tail) {
+    case 'fork': c.moveTo(0, -pd); c.lineTo(-L * 0.2, -Hh * 0.72); c.quadraticCurveTo(-L * 0.08, 0, -L * 0.2, Hh * 0.72); c.lineTo(0, pd); break;
+    case 'round': c.moveTo(0, -pd); c.bezierCurveTo(-L * 0.12, -Hh * 0.75, -L * 0.26, -Hh * 0.3, -L * 0.24, 0); c.bezierCurveTo(-L * 0.26, Hh * 0.3, -L * 0.12, Hh * 0.75, 0, pd); break;
+    case 'lunate': c.moveTo(0, -pd); c.quadraticCurveTo(-L * 0.07, -Hh * 0.45, -L * 0.17, -Hh); c.quadraticCurveTo(-L * 0.09, 0, -L * 0.17, Hh); c.quadraticCurveTo(-L * 0.07, Hh * 0.45, 0, pd); break;
+    case 'point': c.moveTo(0, -pd * 1.6); c.lineTo(-L * 0.26, 0); c.lineTo(0, pd * 1.6); break;
+    case 'fan': c.moveTo(0, -pd); c.lineTo(-L * 0.2, -Hh * 0.85); c.quadraticCurveTo(-L * 0.3, 0, -L * 0.2, Hh * 0.85); c.lineTo(0, pd); break;
+    case 'square': c.moveTo(0, -pd); c.lineTo(-L * 0.15, -Hh * 0.55); c.lineTo(-L * 0.17, 0); c.lineTo(-L * 0.15, Hh * 0.55); c.lineTo(0, pd); break;
+    case 'split': c.moveTo(0, -pd); c.lineTo(-L * 0.22, -Hh * 0.7); c.lineTo(-L * 0.1, -Hh * 0.15); c.lineTo(-L * 0.24, 0); c.lineTo(-L * 0.1, Hh * 0.15); c.lineTo(-L * 0.22, Hh * 0.7); c.lineTo(0, pd); break;
+    case 'double': { const fl = Math.sin(t * 4) * Hh * 0.15;
+      c.moveTo(0, -pd); c.bezierCurveTo(-L * 0.15, -Hh, -L * 0.38, -Hh * 0.6 + fl, -L * 0.3, -Hh * 0.05); c.lineTo(-L * 0.16, 0);
+      c.lineTo(-L * 0.3, Hh * 0.05); c.bezierCurveTo(-L * 0.38, Hh * 0.6 - fl, -L * 0.15, Hh, 0, pd); break; }
+    case 'whip':
+      c.moveTo(0, -pd); c.lineTo(-L * 0.08, 0); c.lineTo(0, pd); c.closePath(); c.fill();
+      c.lineWidth = Math.max(1, L * 0.012); c.lineCap = 'round'; c.beginPath(); c.moveTo(-L * 0.06, 0);
+      c.quadraticCurveTo(-L * 0.25, Math.sin(t * 3) * Hh * 0.4, -L * 0.45, Math.sin(t * 3 + 1) * Hh * 0.5); c.stroke(); return;
+  }
+  c.closePath(); c.fill();
+  if (d.tail === 'fan' || d.tail === 'double' || d.tail === 'round') {
+    c.strokeStyle = 'rgba(0,0,0,0.16)'; c.lineWidth = Math.max(0.6, L * 0.008);
+    for (let i = 0; i < 5; i++) { c.beginPath(); c.moveTo(0, 0); c.lineTo(-L * 0.2, (i / 4 * 2 - 1) * Hh * 0.6); c.stroke(); }
+  }
+}
+function procDorsal(c, d, g, t) {
+  const { L, top, pd } = g, y0 = -top * 0.82;
+  c.beginPath();
+  switch (d.dorsal) {
+    case 'none': return;
+    case 'tri': c.moveTo(-L * 0.14, y0); c.lineTo(-L * 0.04, -top * 1.6); c.lineTo(L * 0.12, y0); break;
+    case 'sail': c.moveTo(-L * 0.3, -top * 0.6); c.quadraticCurveTo(-L * 0.2, -top * 2.4, L * 0.02, -top * 2.2); c.quadraticCurveTo(L * 0.18, -top * 1.6, L * 0.24, -top * 0.8); break;
+    case 'spiny': c.moveTo(-L * 0.26, -top * 0.72); for (let i = 0; i <= 6; i++) c.lineTo(lerp(-L * 0.24, L * 0.16, i / 6), -top * (i % 2 ? 1.25 : 1.6)); c.lineTo(L * 0.2, -top * 0.85); break;
+    case 'long': c.moveTo(-L * 0.38, -pd * 1.2); c.quadraticCurveTo(-L * 0.1, -top * 1.45, L * 0.28, -top * 0.75); c.lineTo(L * 0.2, -top * 0.85); c.quadraticCurveTo(-L * 0.1, -top * 0.95, -L * 0.34, -pd); break;
+    case 'double':
+      c.moveTo(-L * 0.28, -top * 0.6); c.lineTo(-L * 0.24, -top * 1.3); c.lineTo(-L * 0.12, -top * 0.85); c.closePath();
+      c.moveTo(-L * 0.05, -top * 0.95); c.lineTo(L * 0.02, -top * 1.55); c.lineTo(L * 0.14, -top * 0.88); break;
+    case 'crest': c.moveTo(-L * 0.2, -top * 0.85); c.bezierCurveTo(-L * 0.16, -top * 1.7, L * 0.1, -top * 1.7, L * 0.14, -top * 0.85); break;
+    case 'filament':
+      c.moveTo(-L * 0.14, y0); c.lineTo(-L * 0.02, -top * 1.5); c.lineTo(L * 0.12, y0); c.closePath(); c.fill();
+      c.lineWidth = Math.max(1, L * 0.01); c.lineCap = 'round'; c.beginPath(); c.moveTo(-L * 0.02, -top * 1.5);
+      c.quadraticCurveTo(-L * 0.25, -top * 2.1, -L * 0.42 + Math.sin(t * 3) * L * 0.03, -top * 1.6); c.stroke(); return;
+  }
+  c.closePath(); c.fill();
+  if (d.dorsal === 'spiny') {
+    c.strokeStyle = 'rgba(0,0,0,0.3)'; c.lineWidth = Math.max(0.6, L * 0.008);
+    for (let i = 0; i <= 6; i += 2) { const x = lerp(-L * 0.24, L * 0.16, i / 6); c.beginPath(); c.moveTo(x, -top * 0.8); c.lineTo(x, -top * 1.6); c.stroke(); }
+  }
+}
+function procPattern(c, d, g) {
+  const { L, Hh, top, bot, tx, nx } = g, h = top + bot, c2 = d.c2;
+  c.fillStyle = c2; c.strokeStyle = c2;
+  switch (d.pat) {
+    case 'vbar': for (let i = 0; i < d.n; i++) { const x = lerp(L * 0.26, -L * 0.3, i / (d.n - 1)); c.fillRect(x - L * 0.028, -top, L * 0.056, h); } break;
+    case 'hstripe': { const k = Math.max(1, d.n - 3); for (let i = 0; i < k; i++) { const y = k > 1 ? lerp(-top * 0.4, bot * 0.35, i / (k - 1)) : -Hh * 0.04; c.fillRect(tx, y - Hh * 0.05, L, Hh * 0.1); } break; }
+    case 'spots': for (const [x, y, r] of d.spots) { c.beginPath(); c.arc(x * L, y * Hh * 0.5, r * L * 0.035, 0, TAU); c.fill(); } break;
+    case 'dots': for (const [x, y] of d.dots) { c.beginPath(); c.arc(x * L, y * Hh * 0.5, Math.max(0.7, L * 0.012), 0, TAU); c.fill(); } break;
+    case 'grad': { const gr = c.createLinearGradient(0, -top, 0, bot); gr.addColorStop(0, c2); gr.addColorStop(0.6, rgba(c2, 0)); c.fillStyle = gr; c.fillRect(tx, -top, L, h); break; }
+    case 'scales': {
+      const s = L * 0.07; c.lineWidth = Math.max(0.6, L * 0.01); c.globalAlpha = 0.5; let row = 0;
+      for (let y = -top; y < bot + s; y += s * 0.7, row++) for (let x = tx + (row % 2) * s * 0.5; x < nx - L * 0.12; x += s) { c.beginPath(); c.arc(x, y, s * 0.5, -1.2, 1.2); c.stroke(); }
+      c.globalAlpha = 1; break;
+    }
+    case 'band': c.fillRect(L * 0.12, -top, L * 0.09, h); c.fillRect(-L * 0.36, -top, L * 0.06, h); break;
+    case 'eyespot': { const x = -L * 0.24, y = -Hh * 0.05, r = Hh * 0.2;
+      c.fillStyle = 'rgba(255,255,255,0.85)'; c.beginPath(); c.arc(x, y, r * 1.35, 0, TAU); c.fill(); c.fillStyle = c2; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill(); break; }
+    case 'zigzag': c.lineWidth = Math.max(1.2, Hh * 0.07); c.lineJoin = 'round';
+      for (const yy of [-top * 0.3, bot * 0.25]) { c.beginPath(); for (let i = 0; i <= 10; i++) c.lineTo(lerp(tx, nx - L * 0.1, i / 10), yy + (i % 2 ? -1 : 1) * Hh * 0.09); c.stroke(); } break;
+    case 'marble': c.lineWidth = Math.max(1, Hh * 0.06); c.globalAlpha = 0.7;
+      for (let k = 0; k < 4; k++) { c.beginPath(); for (let i = 0; i <= 16; i++) { const x = lerp(tx, nx, i / 16), y = lerp(-top * 0.7, bot * 0.7, k / 3) + Math.sin(i * 0.9 + k * 2) * Hh * 0.08; i ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); }
+      c.globalAlpha = 1; break;
+    case 'saddle': for (let i = 0; i < 3; i++) { c.beginPath(); c.ellipse(lerp(L * 0.15, -L * 0.3, i / 2), -top, L * 0.07, top * 0.6, 0, 0, TAU); c.fill(); } break;
+    case 'checker': { const s = Math.max(2, L * 0.07); let row = 0; c.globalAlpha = 0.6;
+      for (let y = -top; y < bot; y += s, row++) for (let x = tx + (row % 2) * s; x < nx; x += s * 2) c.fillRect(x, y, s, s);
+      c.globalAlpha = 1; break; }
+    case 'half': c.fillRect(L * 0.05, -top, L, h); break;
+    case 'diag': c.save(); c.rotate(-0.5); for (let i = -6; i <= 6; i++) c.fillRect(i * L * 0.1, -L, L * 0.035, L * 2); c.restore(); break;
+    case 'lines': c.globalAlpha = 0.55; for (let i = 0; i < 5; i++) c.fillRect(tx, lerp(-top * 0.75, bot * 0.75, i / 4) - Math.max(0.5, Hh * 0.02), L, Math.max(1, Hh * 0.04)); c.globalAlpha = 1; break;
+  }
+}
+function procMouth(c, sp, d, g) {
+  const { L, Hh, nx, ny, bot } = g, col = sp.color;
+  switch (d.mouth) {
+    case 'small': c.strokeStyle = shade(col, -0.45); c.lineWidth = Math.max(0.8, L * 0.012); c.beginPath(); c.moveTo(nx, ny); c.lineTo(nx - L * 0.04, ny + Hh * 0.04); c.stroke(); break;
+    case 'big':
+      c.fillStyle = '#1a1010'; c.beginPath(); c.moveTo(nx + 1, ny - Hh * 0.02); c.lineTo(nx - L * 0.12, ny + Hh * 0.06); c.lineTo(nx + 1, ny + Hh * 0.24); c.closePath(); c.fill();
+      c.fillStyle = '#f4efe0'; for (let k = 0; k < 3; k++) { const x = nx - k * L * 0.035; c.beginPath(); c.moveTo(x, ny); c.lineTo(x - L * 0.012, ny + Hh * 0.09); c.lineTo(x - L * 0.024, ny + Hh * 0.01); c.fill(); }
+      break;
+    case 'beak': c.fillStyle = d.c3; c.beginPath(); c.moveTo(nx - 1, ny - Hh * 0.1); c.lineTo(nx + L * 0.1, ny); c.lineTo(nx - 1, ny + Hh * 0.1); c.fill(); break;
+    case 'under': c.strokeStyle = shade(col, -0.45); c.lineWidth = Math.max(0.8, L * 0.012); c.beginPath(); c.arc(nx - L * 0.06, ny + bot * 0.4, L * 0.025, 0.2, Math.PI - 0.2); c.stroke(); break;
+    case 'tube': c.fillStyle = shade(col, -0.1); c.beginPath(); c.moveTo(nx - 2, ny - Hh * 0.07); c.lineTo(nx + L * 0.12, ny - Hh * 0.03); c.lineTo(nx + L * 0.12, ny + Hh * 0.04); c.lineTo(nx - 2, ny + Hh * 0.08); c.fill(); break;
+    case 'jaw':
+      c.fillStyle = shade(col, -0.2); c.beginPath(); c.moveTo(nx - L * 0.08, ny + Hh * 0.12); c.lineTo(nx + L * 0.06, ny + Hh * 0.01); c.lineTo(nx - L * 0.02, ny + Hh * 0.2); c.fill();
+      c.fillStyle = '#f4efe0'; for (let k = 0; k < 3; k++) { const x = nx + L * 0.03 - k * L * 0.03; c.beginPath(); c.moveTo(x, ny + Hh * 0.04); c.lineTo(x - L * 0.008, ny - Hh * 0.04); c.lineTo(x - L * 0.016, ny + Hh * 0.05); c.fill(); }
+      break;
+    case 'sword': c.fillStyle = shade(col, -0.1); c.beginPath(); c.moveTo(nx - 2, ny - Hh * 0.06); c.lineTo(nx + L * 0.24, ny); c.lineTo(nx - 2, ny + Hh * 0.05); c.fill(); break;
+  }
+}
+function procEye(c, d, g) {
+  const { L, Hh, nx, top } = g, ex = nx - L * 0.13, ey = -Math.min(top, Hh * 0.5) * 0.32;
+  const r = Math.max(1.4, Hh * 0.12);
+  switch (d.eye) {
+    case 'big': eye(c, ex, ey, r * 1.6); break;
+    case 'tiny': c.fillStyle = '#111'; c.beginPath(); c.arc(ex, ey, Math.max(1, r * 0.55), 0, TAU); c.fill(); break;
+    case 'red': eye(c, ex, ey, r, '#ff5a4a', '#1a0505'); break;
+    case 'gold': eye(c, ex, ey, r, '#f2d14a'); break;
+    case 'glow': c.fillStyle = '#bff8ff'; c.beginPath(); c.arc(ex, ey, r * 1.1, 0, TAU); c.fill(); c.fillStyle = '#fff'; c.beginPath(); c.arc(ex, ey, r * 0.5, 0, TAU); c.fill(); break;
+    case 'tele': c.fillStyle = d.c3; c.fillRect(ex - r * 0.7, ey - r * 2.2, r * 1.4, r * 2.2); eye(c, ex, ey - r * 2.2, r * 1.1, '#d8fff0'); break;
+    default: eye(c, ex, ey, r);
+  }
+}
+function procExtra(c, sp, d, g, t) {
+  const { L, Hh, nx, ny, top, bot } = g, lw = Math.max(1, L * 0.014);
+  c.lineCap = 'round';
+  switch (d.extra) {
+    case 'barbel': c.strokeStyle = d.c3; c.lineWidth = lw;
+      for (const k of [0, 1]) { c.beginPath(); c.moveTo(nx - L * 0.03 - k * L * 0.03, ny + Hh * 0.1); c.quadraticCurveTo(nx - L * 0.02, ny + Hh * 0.35, nx - L * 0.07 - k * L * 0.03, ny + Hh * 0.5 + Math.sin(t * 3 + k) * Hh * 0.06); c.stroke(); }
+      break;
+    case 'horn': c.fillStyle = d.c3; c.beginPath(); c.moveTo(nx - L * 0.2, -top * 0.8); c.lineTo(nx + L * 0.04, -top * 1.35); c.lineTo(nx - L * 0.09, -top * 0.6); c.fill(); break;
+    case 'lure': {
+      const ly = -top * 1.75 + Math.sin(t * 2) * Hh * 0.06;
+      c.strokeStyle = shade(sp.color, 0.3); c.lineWidth = lw; c.beginPath(); c.moveTo(nx - L * 0.16, -top * 0.85); c.quadraticCurveTo(nx - L * 0.02, -top * 2.2, nx + L * 0.1, ly); c.stroke();
+      c.fillStyle = '#ffe9a3'; c.beginPath(); c.arc(nx + L * 0.1, ly, Math.max(2, L * 0.04), 0, TAU); c.fill(); break;
+    }
+    case 'whisker': c.strokeStyle = d.c3; c.lineWidth = Math.max(0.8, L * 0.009);
+      for (const k of [0, 1]) { c.beginPath(); c.moveTo(nx - L * 0.02, ny + Hh * 0.04); c.quadraticCurveTo(nx - L * 0.1, ny + Hh * (0.5 + k * 0.3), nx - L * (0.35 + k * 0.08), ny + Hh * (0.45 + k * 0.25) + Math.sin(t * 2 + k) * Hh * 0.08); c.stroke(); }
+      break;
+    case 'glowdots': for (let i = 0; i < 7; i++) {
+      c.fillStyle = `rgba(${d.glowRgb},${0.55 + 0.4 * Math.sin(t * 3 + i)})`;
+      c.beginPath(); c.arc(lerp(L * 0.3, -L * 0.3, i / 6), bot * 0.68, Math.max(1, L * 0.015), 0, TAU); c.fill(); }
+      break;
+    case 'crown': c.fillStyle = d.c3; for (let i = 0; i < 4; i++) { const x = nx - L * 0.28 + i * L * 0.05, yb = -top * (0.86 + i * 0.02); c.beginPath(); c.moveTo(x - L * 0.018, yb); c.lineTo(x, yb - top * 0.5); c.lineTo(x + L * 0.018, yb); c.fill(); } break;
+  }
+}
+function shpProc(c, sp, L, t) {
+  const d = sp.d, g = sp.g || (sp.g = procGeo(sp)), { Hh, nx, top, bot, tx } = g, col = sp.color;
+  c.fillStyle = d.c3; c.strokeStyle = d.c3;
+  c.save(); c.translate(tx + L * 0.02, 0); c.rotate(Math.sin(t * (d.tail === 'whip' || d.tail === 'point' ? 6 : 9)) * 0.22); procTail(c, d, g, t); c.restore();
+  c.fillStyle = d.c3; c.strokeStyle = d.c3; procDorsal(c, d, g, t);
+  c.fillStyle = d.c3;
+  c.beginPath(); c.moveTo(-L * 0.16, bot * 0.8); c.lineTo(-L * 0.24, bot * 1.35); c.lineTo(-L * 0.04, bot * 0.9); c.fill();
+  c.beginPath(); c.moveTo(L * 0.08, bot * 0.9); c.lineTo(L * 0.02, bot * 1.3); c.lineTo(L * 0.14, bot * 0.95); c.fill();
+  if (d.extra === 'spikes') {
+    c.fillStyle = shade(col, -0.3);
+    for (let i = 0; i < 18; i++) {
+      const a = i / 18 * TAU, ca = Math.cos(a), sa = Math.sin(a), ry = sa < 0 ? top : bot, x = ca * L * 0.36, y = sa * ry * 0.95;
+      if (x < tx + L * 0.1) continue;
+      c.beginPath(); c.moveTo(x - sa * L * 0.02, y + ca * L * 0.02); c.lineTo(x + ca * L * 0.08, y + sa * L * 0.08); c.lineTo(x + sa * L * 0.02, y - ca * L * 0.02); c.fill();
+    }
+  }
+  procBody(c, d, g); c.fillStyle = col; c.fill();
+  c.save(); c.clip();
+  procPattern(c, d, g);
+  c.fillStyle = 'rgba(255,255,255,0.16)'; c.beginPath(); c.ellipse(0, bot * 0.45, L * 0.32, bot * 0.25, 0, 0, TAU); c.fill();
+  c.strokeStyle = shade(col, -0.35); c.lineWidth = Math.max(1, L * 0.016); c.beginPath(); c.arc(nx - L * 0.2, 0, Hh * 0.32, -1, 1); c.stroke();
+  c.restore();
+  procBody(c, d, g); c.strokeStyle = rgbOf(col).reduce((a, v) => a + v, 0) < 240 ? 'rgba(170,200,230,0.35)' : 'rgba(0,0,0,0.18)'; c.lineWidth = Math.max(0.8, L * 0.01); c.stroke();
+  c.save(); c.translate(nx - L * 0.24, Hh * 0.12); c.rotate(0.5 + Math.sin(t * 6) * 0.3); c.fillStyle = rgba(d.c3, 0.85); c.beginPath();
+  if (d.pec === 'wing') c.ellipse(-L * 0.13, 0, L * 0.17, Hh * 0.18, 0, 0, TAU); else c.ellipse(-L * 0.05, 0, L * 0.07, Math.max(1, Hh * 0.1), 0, 0, TAU);
+  c.fill(); c.restore();
+  procMouth(c, sp, d, g); procEye(c, d, g); procExtra(c, sp, d, g, t);
+}
+const SHAPES = { proc: shpProc, fish: shpFish, slim: (c, s, L, t) => shpFish(c, s, L, t, 0.28), flat: shpFlat, shark: shpShark, eel: shpEel, jelly: shpJelly, squid: shpSquid, crab: shpCrab, angler: shpAngler, sunfish: shpSunfish, whale: shpWhale, ray: shpRay, slime: shpSlime };
 function drawCreature(c, sp, x, y, dir, t, scale = 1) {
   c.save(); c.translate(x, y); c.scale(dir * scale, scale);
   (SHAPES[sp.shape] || shpFish)(c, sp, sp.len, t);
@@ -596,6 +992,7 @@ function drawCreature(c, sp, x, y, dir, t, scale = 1) {
 function mouthOf(sp) {
   const L = sp.len;
   switch (sp.shape) {
+    case 'proc': return [L * (sp.d.mouth === 'tube' ? 0.58 : 0.46), L * sp.d.hr * 0.06];
     case 'jelly': return [0, L * 0.12];
     case 'slime': return [L * 0.32, L * 0.1];
     case 'squid': return [-L * 0.45, 0];
@@ -613,6 +1010,11 @@ function glowOf(sp) {
   const L = sp.len;
   if (sp.shape === 'angler') { const R = L * 0.33; return [R * 1.2, -R * 1.3, Math.max(26, L * 0.9), '255,226,150']; }
   if (sp.shape === 'jelly') return [0, -L * 0.2, L * 0.9, '200,180,255'];
+  if (sp.shape === 'proc') {
+    if (!sp.glow) return null;
+    const top = L * sp.d.hr * (0.5 + sp.d.hump);
+    return sp.d.extra === 'lure' ? [L * 0.56, -top * 1.75, Math.max(26, L * 0.6), sp.d.glowRgb] : [0, 0, L * 0.6, sp.d.glowRgb];
+  }
   if (sp.shape === 'ray') return [0, 0, L * 0.7, '140,240,255'];
   if (sp.shape === 'whale') return [0, -L * 0.05, L * 0.6, '255,243,196'];
   if (sp.boss) return [L * 0.42, -L * 0.03, L * 0.35, '127,247,224'];
@@ -666,12 +1068,13 @@ function updateParts(dt) {
 }
 
 /* ---------- fish population ---------- */
+// pick a rarity tier first, then a species inside it, so a zone with 40+ fish keeps its monster/boss odds
 function pickSpecies(z) {
-  const pool = SPECIES.filter(s => s.zone === z); let tot = 0;
-  const ws = pool.map(s => { let w = RAR_W[s.rar]; if (s.rar >= 2) w *= 1 + 0.22 * (S.bait - 1); tot += w; return w; });
+  const groups = ZPOOL[z], ks = Object.keys(groups); let tot = 0;
+  const ws = ks.map(k => { let w = RAR_W[k] * (k == 4 ? 4 : Math.min(4, groups[k].length)); if (k >= 2) w *= 1 + 0.22 * (S.bait - 1); tot += w; return w; });
   let r = Math.random() * tot;
-  for (let i = 0; i < pool.length; i++) { r -= ws[i]; if (r <= 0) return pool[i]; }
-  return pool[0];
+  for (let i = 0; i < ks.length; i++) { r -= ws[i]; if (r <= 0) { const g = groups[ks[i]]; return g[Math.floor(Math.random() * g.length)]; } }
+  return groups[ks[0]][0];
 }
 function spawnAt(dm, x) {
   const sp = pickSpecies(zoneIndex(dm)), dir = Math.random() < 0.5 ? 1 : -1, sz = rand(0.85, 1.15);
@@ -704,6 +1107,7 @@ function clearInterest() { for (const f of G.fish) f.interested = false; }
 
 /* ---------- input ---------- */
 function pressStart() {
+  if (!ACCOUNT) return;
   ensureAudio();
   switch (G.state) {
     case 'idle': G.state = 'charging'; G.chargeT = 0; G.charge = 0; break;
@@ -725,6 +1129,7 @@ function doCast() {
 cvs.addEventListener('pointerdown', e => {
   e.preventDefault(); cvs.focus({ preventScroll: true });
   try { cvs.setPointerCapture(e.pointerId); } catch (_) {}
+  if (!ACCOUNT) return;
   if (G.state === 'raid') { ensureAudio(); const r = cvs.getBoundingClientRect(); raidHit(e.clientX - r.left, e.clientY - r.top + G.camY); return; }
   pressStart();
 });
@@ -735,6 +1140,7 @@ window.addEventListener('keydown', e => {
   if (e.code !== 'Space' && e.key !== ' ') return;
   const tag = e.target && e.target.tagName;
   if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if (!ACCOUNT) return;
   e.preventDefault(); if (e.repeat) return;
   if (G.state === 'raid') { ensureAudio(); const tn = G.raid && G.raid.tent.find(x => !x.dead); if (tn) raidStrike(tn); return; }
   pressStart();
@@ -959,7 +1365,7 @@ function update(dt) {
     case 'raid': updateRaid(dt); break;
   }
   if (G.state === 'idle' || G.state === 'charging') { const tip = rodTip(); G.hook.x = tip.x + Math.sin(G.t * 2) * 2; G.hook.y = tip.y + 30; }
-  if ((G.state === 'idle' || G.state === 'waiting' || G.state === 'sinking') && S.stats.catches >= 3) {
+  if ((G.state === 'idle' || G.state === 'waiting' || G.state === 'sinking') && S.stats.catches >= 3 && ACCOUNT) {
     G.raidCd -= dt; if (G.raidCd <= 0) startRaid();
   }
   if (G.trophy) { G.trophy.t += dt / 0.7; if (G.trophy.t >= 1) G.trophy = null; }
@@ -1385,9 +1791,10 @@ function drawThumb(cv, sp, caught) {
   const w = cv.clientWidth || 96, h = 56, d = Math.min(2, window.devicePixelRatio || 1);
   cv.width = Math.round(w * d); cv.height = Math.round(h * d);
   const c = cv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0);
-  const tall = sp.shape === 'jelly' || sp.shape === 'sunfish' || sp.shape === 'angler';
-  const s = Math.min(1.4, (w - 10) / (sp.len * 1.25), (h - 8) / (sp.len * (tall ? 1.3 : 0.7)));
-  drawCreature(c, sp, w / 2 + (sp.shape === 'angler' ? -sp.len * s * 0.1 : 0), h / 2 + (sp.shape === 'jelly' ? -sp.len * s * 0.2 : sp.shape === 'angler' ? sp.len * s * 0.15 : 0), 1, 1.2, s);
+  const proc = sp.shape === 'proc', tall = sp.shape === 'jelly' || sp.shape === 'sunfish' || sp.shape === 'angler';
+  const vert = proc ? sp.d.hr * (sp.d.dorsal === 'sail' ? 1.9 : 1.45) + (sp.d.extra === 'lure' ? 0.3 : 0) : tall ? 1.3 : 0.7;
+  const s = Math.min(1.4, (w - 10) / (sp.len * (proc ? 1.45 : 1.25)), (h - 8) / (sp.len * vert));
+  drawCreature(c, sp, w / 2 + (sp.shape === 'angler' ? -sp.len * s * 0.1 : 0), h / 2 + (sp.shape === 'jelly' ? -sp.len * s * 0.2 : sp.shape === 'angler' ? sp.len * s * 0.15 : proc && (sp.d.dorsal === 'sail' || sp.d.extra === 'lure' || sp.d.eye === 'tele') ? sp.len * s * sp.d.hr * 0.3 : 0), 1, 1.2, s);
   if (!caught) {
     c.globalCompositeOperation = 'source-atop'; c.fillStyle = '#0c1d2f'; c.fillRect(0, 0, w, h);
     c.globalCompositeOperation = 'source-over';
@@ -1425,7 +1832,7 @@ document.querySelector('.panel').addEventListener('click', e => {
       const on = b === tab; b.setAttribute('aria-selected', String(on)); $('panel-' + b.dataset.tab).hidden = !on;
     }
     if (tab.dataset.tab === 'dex' && dexDirty) { renderDex(); dexDirty = false; }
-    try { localStorage.setItem(KEY + '-tab', tab.dataset.tab); } catch (_) {}
+    try { localStorage.setItem(BASE_KEY + '-tab', tab.dataset.tab); } catch (_) {}
     return;
   }
   const b = e.target.closest('[data-buy]');
@@ -1453,9 +1860,162 @@ function buy(kind) {
 }
 $('soundBtn').addEventListener('click', e => { S.sound = !S.sound; ensureAudio(); save(); renderHeader(); e.currentTarget.blur(); });
 
+/* ---------- login (guest / Google via Firebase) + cloud save ---------- */
+const esc = v => String(v).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+const G_LOGO = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.9 6.2C12.4 13.7 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.5 28.5c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-7.9-6.2C1 16.6 0 20.2 0 24s1 7.4 2.6 10.7l7.9-6.2z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.2-13.5-10l-7.9 6.2C6.6 42.6 14.6 48 24 48z"/></svg>';
+const FB_VER = '10.12.2', FB_URL = m => `https://www.gstatic.com/firebasejs/${FB_VER}/firebase-${m}.js`;
+const cloudReady = () => !!FIREBASE_CONFIG && location.protocol !== 'file:';
+let FB = null, fbLoading = null, pendingAcc = null;
+function loadFirebase() {
+  if (!fbLoading) {
+    fbLoading = Promise.all(['app', 'auth', 'firestore'].map(m => import(FB_URL(m)))).then(([A, Au, Fs]) => {
+      const app = A.initializeApp(FIREBASE_CONFIG);
+      FB = { Au, Fs, auth: Au.getAuth(app), db: Fs.getFirestore(app) };
+      return FB;
+    });
+    fbLoading.catch(() => { fbLoading = null; });
+  }
+  return fbLoading;
+}
+const cloudRef = uid => FB.Fs.doc(FB.db, 'saves', uid);
+function setNote(msg, info) { const n = $('gNote'); n.textContent = msg || ''; n.hidden = !msg; n.classList.toggle('info', !!info); }
+function authError(e) {
+  switch (e && e.code) {
+    case 'auth/unauthorized-domain': return '이 주소는 Firebase에 승인된 도메인이 아니에요. Firebase 콘솔 > Authentication > 설정 > 승인된 도메인에 추가해 주세요.';
+    case 'auth/popup-blocked': return '팝업이 막혔어요. 브라우저에서 팝업을 허용하고 다시 눌러 주세요.';
+    case 'auth/network-request-failed': return '인터넷 연결을 확인해 주세요.';
+    case 'auth/operation-not-allowed': return 'Firebase 콘솔에서 Google 로그인 제공업체를 켜 주세요.';
+    default: return `로그인하지 못했어요. 다시 시도해 주세요.${e && e.code ? ` (${e.code})` : ''}`;
+  }
+}
+function initGoogle() {
+  const ok = cloudReady();
+  $('gBtn').innerHTML = `<button class="g-btn" id="gSignIn" type="button" ${ok ? '' : 'disabled'}>${G_LOGO}<span>Google 계정으로 로그인</span></button>`;
+  if (!FIREBASE_CONFIG) return setNote('구글 로그인은 아직 설정되지 않았어요. 지금은 게스트로 시작할 수 있어요.');
+  if (!ok) return setNote('구글 로그인은 웹 주소(https)로 열었을 때만 돼요. 지금은 게스트로 시작할 수 있어요.');
+  $('gSignIn').addEventListener('click', signInGoogle);
+}
+async function signInGoogle() {
+  const b = $('gSignIn'); b.disabled = true; setNote('');
+  try {
+    const fb = await loadFirebase();
+    const prov = new fb.Au.GoogleAuthProvider(); prov.setCustomParameters({ prompt: 'select_account' });
+    const cred = await fb.Au.signInWithPopup(fb.auth, prov);
+    setNote('기록을 불러오는 중…', true);
+    await enterGoogle(cred.user, true);
+  } catch (e) {
+    if (!e || (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request')) setNote(e && e.code ? authError(e) : '구글 로그인을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.');
+    else setNote('');
+  } finally { b.disabled = false; }
+}
+// cloud and this device's cache are compared by save time; the newer one wins
+async function enterGoogle(user, interactive) {
+  const acc = { type: 'google', uid: user.uid, name: user.displayName || user.email || '구글 사용자', email: user.email || '', picture: user.photoURL || '' };
+  const local = readSave(slotKey(acc));
+  let cloud = null, cloudOk = true;
+  try { const snap = await FB.Fs.getDoc(cloudRef(acc.uid)); if (snap.exists() && snap.data().data) cloud = normalize(snap.data().data); } catch (e) { cloudOk = false; }
+  const best = cloud && (!local || (cloud._t || 0) >= (local._t || 0)) ? cloud : local;
+  if (!best && interactive) {
+    const guest = readSave(BASE_KEY);
+    if (guest && guest.stats.catches > 0) {
+      pendingAcc = acc; setNote('');
+      $('mergeName').textContent = acc.name;
+      $('mergeInfo').textContent = `낚은 물고기 ${fmtN(guest.stats.catches)}마리 · 금화 ${fmtN(guest.gold)} G · ${RODS[guest.rod].name}`;
+      $('loginMain').hidden = true; $('loginMerge').hidden = false; $('mergeYes').focus();
+      return;
+    }
+  }
+  setAccount(acc, !interactive, best);
+  if (best && best === local && cloudOk && (!cloud || (local._t || 0) > (cloud._t || 0))) cloudSave(true); // push offline progress up
+  if (!cloudOk) { setSync('err'); toast('<b>클라우드에 연결하지 못했어요.</b> 이 기기 기록으로 하고, 연결되면 다시 저장해요.', 'bad', 3600); }
+}
+function setAccount(acc, quiet, data) {
+  ACCOUNT = acc; KEY = slotKey(acc);
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(acc)); } catch (_) {}
+  S = data ? normalize(data) : readSave(KEY) || fresh();
+  writeLocal(KEY, S);
+  G.state = 'idle'; G.fight = null; G.bite = null; G.raid = null; G.holding = false; G.raidCd = rand(80, 140); clearInterest();
+  renderAll(); renderAccount(); setNote('');
+  $('login').hidden = true; cvs.focus({ preventScroll: true });
+  if (!quiet) toast(acc.type === 'google' ? `<b>${esc(acc.name)}</b>님, 어서 오세요! 기록은 클라우드에 저장돼요.` : '<b>게스트</b>로 시작해요. 기록은 이 브라우저에 저장돼요.', 'good', 2800);
+}
+
+/* cloud writes are batched: at most one every few seconds, plus a flush when the tab is hidden */
+let cloudTimer = 0, cloudDirty = false, cloudWarned = false;
+function setSync(st) {
+  const d = $('syncDot'); d.className = 'sync ' + st;
+  d.title = { ok: '클라우드에 저장됨', wait: '클라우드에 저장하는 중', err: '클라우드 저장 실패 · 다음 저장 때 다시 시도해요' }[st] || '';
+}
+function cloudSave(now) {
+  if (!FB || !ACCOUNT || ACCOUNT.type !== 'google') return;
+  cloudDirty = true; setSync('wait'); clearTimeout(cloudTimer);
+  if (now) flushCloud(); else cloudTimer = setTimeout(flushCloud, 3000);
+}
+function flushCloud() {
+  clearTimeout(cloudTimer);
+  if (!cloudDirty || !FB || !ACCOUNT || ACCOUNT.type !== 'google') return Promise.resolve();
+  cloudDirty = false;
+  const data = JSON.parse(JSON.stringify(S));
+  return FB.Fs.setDoc(cloudRef(ACCOUNT.uid), { data, updatedAt: FB.Fs.serverTimestamp() })
+    .then(() => { setSync('ok'); cloudWarned = false; })
+    .catch(() => {
+      cloudDirty = true; setSync('err');
+      if (!cloudWarned) { cloudWarned = true; toast('<b>클라우드 저장에 실패했어요.</b> 기록은 이 기기에 남아 있고, 다음 저장 때 다시 시도해요.', 'bad', 3600); }
+    });
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushCloud(); });
+window.addEventListener('pagehide', () => { flushCloud(); });
+
+function showLogin(note) {
+  G.state = 'idle'; G.fight = null; G.bite = null; G.raid = null; G.holding = false; clearInterest();
+  $('loginMain').hidden = false; $('loginMerge').hidden = true;
+  $('login').hidden = false; initGoogle(); if (note) setNote(note, true); $('guestBtn').focus();
+}
+async function logout() {
+  const wasGoogle = ACCOUNT && ACCOUNT.type === 'google';
+  save();
+  if (wasGoogle && FB) { await flushCloud(); try { await FB.Au.signOut(FB.auth); } catch (_) {} }
+  ACCOUNT = null; KEY = BASE_KEY;
+  try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
+  renderAccount(); showLogin();
+}
+function renderAccount() {
+  const on = !!ACCOUNT, g = on && ACCOUNT.type === 'google';
+  $('accountChip').hidden = !on; $('logoutBtn').hidden = !on; $('syncDot').hidden = !g;
+  if (!on) return;
+  $('accName').textContent = g ? ACCOUNT.name : '게스트';
+  $('accountChip').title = g ? `${ACCOUNT.email} · 클라우드 저장` : '게스트 기록은 이 브라우저에만 저장돼요';
+  $('logoutBtn').textContent = g ? '로그아웃' : '계정 바꾸기';
+  if (g) setSync(FB ? 'ok' : 'err');
+  const av = $('accAvatar'); av.textContent = '';
+  if (g && ACCOUNT.picture) { const im = new Image(); im.alt = ''; im.referrerPolicy = 'no-referrer'; im.src = ACCOUNT.picture; im.onerror = () => { av.textContent = ACCOUNT.name.slice(0, 1); }; av.appendChild(im); }
+  else av.textContent = g ? ACCOUNT.name.slice(0, 1) : '게';
+}
+$('guestBtn').addEventListener('click', () => setAccount({ type: 'guest' }));
+$('mergeYes').addEventListener('click', () => { setAccount(pendingAcc, false, readSave(BASE_KEY)); save(); cloudSave(true); });
+$('mergeNo').addEventListener('click', () => { setAccount(pendingAcc, false, null); save(); cloudSave(true); });
+$('logoutBtn').addEventListener('click', e => { e.currentTarget.blur(); logout(); });
+
 /* ---------- boot ---------- */
-renderAll();
-try { const tb = localStorage.getItem(KEY + '-tab'); if (tb && tb !== 'shop') document.querySelector(`[data-tab="${tb}"]`)?.click(); } catch (_) {}
+let session = null;
+try { session = JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (_) {}
+if (session && session.type === 'guest') setAccount(session, true);
+else if (session && session.type === 'google' && session.uid && cloudReady()) {
+  renderAll(); renderAccount(); showLogin('로그인 정보를 확인하는 중…');
+  loadFirebase().then(fb => {
+    const off = fb.Au.onAuthStateChanged(fb.auth, u => {
+      off();
+      if (u) enterGoogle(u, false);
+      else { try { localStorage.removeItem(SESSION_KEY); } catch (_) {} setNote(''); }
+    });
+  }).catch(() => {
+    // offline: keep playing on this device's copy; it goes up to the cloud on a later online visit
+    setAccount(session, true);
+    toast('<b>오프라인이에요.</b> 이 기기 기록으로 하고, 다음에 접속하면 클라우드에 올려요.', 'bad', 3600);
+  });
+}
+else { renderAll(); renderAccount(); showLogin(); }
+try { const tb = localStorage.getItem(BASE_KEY + '-tab'); if (tb && tb !== 'shop') document.querySelector(`[data-tab="${tb}"]`)?.click(); } catch (_) {}
 G.camY = camTarget();
 for (let i = 0; i < 6; i++) spawnAt(rand(3, Math.max(8, (G.camY + H) / PX - 4)), rand(40, W - 40));
 let last = performance.now();
