@@ -170,6 +170,40 @@ button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 .danger-btn { padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(240, 117, 96, .5); background: transparent; color: var(--coral); cursor: pointer; }
 .danger-btn.armed { background: var(--coral); color: #250a05; }
 
+.rank-gate { padding: 18px 14px; border-radius: 12px; background: var(--hull-2); display: flex; flex-direction: column; gap: 10px; text-align: center; }
+.rank-gate h3 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 20px; }
+.rank-gate p { margin: 0; color: var(--mist); font-size: 13px; }
+.rank-me { padding: 12px 14px; border-radius: 12px; background: var(--hull-2); border: 1px solid rgba(226, 176, 74, .45); display: flex; flex-direction: column; gap: 8px; }
+.rank-me-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.rank-me-name { min-width: 0; }
+.rank-me-name small { display: block; font-size: 12px; color: var(--mist); }
+.rank-me-name b { display: block; font-family: var(--display); font-weight: 400; font-size: 20px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-me-pos { text-align: right; flex: none; }
+.rank-me-pos b { font-family: var(--display); font-weight: 400; font-size: 24px; color: var(--brass); }
+.rank-me-pos small { display: block; font-size: 12px; color: var(--mist); font-variant-numeric: tabular-nums; }
+.nick-form { display: flex; gap: 6px; }
+.nick-form input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--abyss); color: var(--foam); font: inherit; }
+.nick-form input:focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; }
+.mini { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--foam); cursor: pointer; font-size: 13px; white-space: nowrap; }
+.mini:hover { border-color: var(--mist); }
+.mini.primary { background: var(--brass); border-color: var(--brass); color: #1d1405; }
+.rank-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.rank-cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.rank-cats button { padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--mist); cursor: pointer; font-size: 13px; }
+.rank-cats button[aria-pressed="true"] { background: var(--brass); border-color: var(--brass); color: #1d1405; }
+.rank-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.rank-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 6px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.rank-row .rk { font-family: var(--display); font-size: 17px; text-align: center; color: var(--mist); }
+.rank-row.top1 .rk { color: #ffd65a; }
+.rank-row.top2 .rk { color: #d7dee6; }
+.rank-row.top3 .rk { color: #e0a070; }
+.rank-row .rn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-row .rv { font-size: 13px; text-align: right; white-space: nowrap; }
+.rank-row.me { background: rgba(226, 176, 74, .12); border-radius: 8px; border-bottom-color: transparent; }
+.rank-row.me .rn { color: var(--brass); }
+.rank-note { margin: 0; font-size: 12px; color: var(--mist); }
+.rank-note.bad { color: var(--coral); }
+
 .chip.account { align-items: center; gap: 8px; padding-left: 6px; }
 .chip.account b { max-width: 9em; overflow: hidden; text-overflow: ellipsis; font-size: 15px; }
 .avatar { width: 24px; height: 24px; border-radius: 50%; flex: none; overflow: hidden; display: grid; place-items: center; background: var(--line); color: var(--foam); font-family: var(--display); font-size: 13px; }
@@ -253,10 +287,12 @@ button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
       <div class="tabs" role="tablist">
         <button type="button" role="tab" id="tab-shop" data-tab="shop" aria-selected="true" aria-controls="panel-shop">장비 상점</button>
         <button type="button" role="tab" id="tab-dex" data-tab="dex" aria-selected="false" aria-controls="panel-dex">도감 <span id="dexCount"></span></button>
+        <button type="button" role="tab" id="tab-rank" data-tab="rank" aria-selected="false" aria-controls="panel-rank">랭킹</button>
         <button type="button" role="tab" id="tab-log" data-tab="log" aria-selected="false" aria-controls="panel-log">기록</button>
       </div>
       <div class="tabpanel" id="panel-shop" role="tabpanel" aria-labelledby="tab-shop"></div>
       <div class="tabpanel" id="panel-dex" role="tabpanel" aria-labelledby="tab-dex" hidden></div>
+      <div class="tabpanel" id="panel-rank" role="tabpanel" aria-labelledby="tab-rank" hidden></div>
       <div class="tabpanel" id="panel-log" role="tabpanel" aria-labelledby="tab-log" hidden></div>
     </aside>
   </main>
@@ -1925,11 +1961,13 @@ document.querySelector('.panel').addEventListener('click', e => {
       const on = b === tab; b.setAttribute('aria-selected', String(on)); $('panel-' + b.dataset.tab).hidden = !on;
     }
     if (tab.dataset.tab === 'dex' && dexDirty) { renderDex(); dexDirty = false; }
+    if (tab.dataset.tab === 'rank') renderRank();
     try { localStorage.setItem(BASE_KEY + '-tab', tab.dataset.tab); } catch (_) {}
     return;
   }
   const b = e.target.closest('[data-buy]');
   if (b) { buy(b.dataset.buy); b.blur(); return; }
+  if (rankClick(e)) return;
   if (e.target.closest('#resetBtn')) {
     if (!resetArmed) { resetArmed = true; renderLog(); setTimeout(() => { if (resetArmed) { resetArmed = false; renderLog(); } }, 4000); return; }
     resetArmed = false; const snd = S.sound; S = fresh(); S.sound = snd; save();
@@ -2019,6 +2057,7 @@ async function enterGoogle(user, interactive) {
     }
   }
   setAccount(acc, !interactive, best);
+  if (cloudOk) pushRank().then(() => { if (!$('panel-rank').hidden) renderRank(true); });
   if (best && best === local && cloudOk && (!cloud || (local._t || 0) > (cloud._t || 0))) cloudSave(true); // push offline progress up
   if (!cloudOk) { setSync('err'); toast('<b>클라우드에 연결하지 못했어요.</b> 이 기기 기록으로 하고, 연결되면 다시 저장해요.', 'bad', 3600); }
 }
@@ -2028,7 +2067,8 @@ function setAccount(acc, quiet, data) {
   S = data ? normalize(data) : readSave(KEY) || fresh();
   writeLocal(KEY, S);
   G.state = 'idle'; G.fight = null; G.bite = null; G.raid = null; G.trophy = null; G.holding = false; G.raidCd = rand(80, 140); clearInterest();
-  renderAll(); renderAccount(); setNote('');
+  renderAll(); renderAccount(); setNote(''); rankCache = {}; rankSent = ''; nickEditing = false;
+  if (!$('panel-rank').hidden) renderRank();
   $('login').hidden = true; cvs.focus({ preventScroll: true });
   if (!quiet) toast(acc.type === 'google' ? `<b>${esc(acc.name)}</b>님, 어서 오세요! 기록은 클라우드에 저장돼요.` : '<b>게스트</b>로 시작해요. 기록은 이 브라우저에 저장돼요.', 'good', 2800);
 }
@@ -2050,7 +2090,7 @@ function flushCloud() {
   cloudDirty = false;
   const data = JSON.parse(JSON.stringify(S));
   return FB.Fs.setDoc(cloudRef(ACCOUNT.uid), { data, updatedAt: FB.Fs.serverTimestamp() })
-    .then(() => { setSync('ok'); cloudWarned = false; })
+    .then(() => { setSync('ok'); cloudWarned = false; pushRank(); })
     .catch(() => {
       cloudDirty = true; setSync('err');
       if (!cloudWarned) { cloudWarned = true; toast('<b>클라우드 저장에 실패했어요.</b> 기록은 이 기기에 남아 있고, 다음 저장 때 다시 시도해요.', 'bad', 3600); }
@@ -2070,7 +2110,7 @@ async function logout() {
   if (wasGoogle && FB) { await flushCloud(); try { await FB.Au.signOut(FB.auth); } catch (_) {} }
   ACCOUNT = null; KEY = BASE_KEY;
   try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
-  renderAccount(); showLogin();
+  renderAccount(); renderRank(); showLogin();
 }
 function renderAccount() {
   const on = !!ACCOUNT, g = on && ACCOUNT.type === 'google';
@@ -2088,6 +2128,111 @@ $('guestBtn').addEventListener('click', () => setAccount({ type: 'guest' }));
 $('mergeYes').addEventListener('click', () => { setAccount(pendingAcc, false, readSave(BASE_KEY)); save(); cloudSave(true); });
 $('mergeNo').addEventListener('click', () => { setAccount(pendingAcc, false, null); save(); cloudSave(true); });
 $('logoutBtn').addEventListener('click', e => { e.currentTarget.blur(); logout(); });
+
+/* ---------- ranking (Google accounts only; guests are left out) ---------- */
+const RANK_CATS = [
+  { key: 'earned', label: '총 수익', fmt: r => `${fmtN(r.earned)} G` },
+  { key: 'dex', label: '도감', fmt: r => `${fmtN(r.dex)}종` },
+  { key: 'big', label: '대어', fmt: r => r.big > 0 ? `${r.bigId && SP[r.bigId] ? SP[r.bigId].name + ' ' : ''}${fmtW(r.big)}` : '-' },
+  { key: 'deep', label: '최대 수심', fmt: r => `${fmtN(r.deep)}m` },
+];
+let rankCat = 'earned', rankCache = {}, rankSent = '', rankErr = null, nickEditing = false, rankSeq = 0;
+try { const rc = localStorage.getItem(BASE_KEY + '-rankcat'); if (RANK_CATS.some(c => c.key === rc)) rankCat = rc; } catch (_) {}
+const isGoogle = () => !!(ACCOUNT && ACCOUNT.type === 'google');
+function defaultNick(uid) { let h = 7; for (const ch of uid) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return `낚시꾼${String(h % 10000).padStart(4, '0')}`; }
+const cleanNick = v => String(v || '').replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 12);
+const myNick = () => cleanNick(S.nick) || defaultNick(ACCOUNT.uid);
+function rankEntry() {
+  const big = S.stats.biggest && SP[S.stats.biggest.id] ? S.stats.biggest : null;
+  return {
+    name: myNick(), earned: Math.max(0, Math.round(S.stats.earned)), dex: Object.keys(S.dex).filter(id => SP[id]).length,
+    big: big ? Math.min(40000, Math.round(big.w * 1000) / 1000) : 0, bigId: big ? big.id : '', deep: clamp(Math.round(S.stats.deepest), 0, 480),
+  };
+}
+function rankErrText(e) {
+  return e && e.code === 'permission-denied'
+    ? '랭킹 규칙이 아직 게시되지 않았어요. Firestore 규칙에 ranks 부분을 추가해 주세요 (README 참고).'
+    : '랭킹을 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.';
+}
+// only sent when a score or the nickname changed, right after the cloud save succeeds
+function pushRank(force) {
+  if (!FB || !isGoogle()) return Promise.resolve();
+  const e = rankEntry(), j = JSON.stringify(e), uid = ACCOUNT.uid;
+  if (!force && j === rankSent) return Promise.resolve();
+  return FB.Fs.setDoc(FB.Fs.doc(FB.db, 'ranks', uid), { ...e, updatedAt: FB.Fs.serverTimestamp() })
+    .then(() => { if (isGoogle() && ACCOUNT.uid === uid) { rankSent = j; rankCache = {}; rankErr = null; } })
+    .catch(err => { rankErr = err; });
+}
+async function loadRanks(cat, force) {
+  const c = rankCache[cat];
+  if (!force && c && Date.now() - c.at < 30000) return c;
+  const { Fs } = FB, col = Fs.collection(FB.db, 'ranks');
+  const snap = await Fs.getDocs(Fs.query(col, Fs.orderBy(cat, 'desc'), Fs.limit(50)));
+  const rows = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+  let mine = rows.findIndex(r => r.uid === ACCOUNT.uid) + 1, total = null;
+  try {
+    total = (await Fs.getCountFromServer(col)).data().count;
+    if (!mine) mine = (await Fs.getCountFromServer(Fs.query(col, Fs.where(cat, '>', rankEntry()[cat])))).data().count + 1;
+  } catch (_) {}
+  return (rankCache[cat] = { rows, mine, total, at: Date.now() });
+}
+async function renderRank(force) {
+  const el = $('panel-rank'), seq = ++rankSeq;
+  if (!isGoogle()) {
+    el.innerHTML = `<div class="rank-gate"><h3>랭킹은 구글 계정 전용이에요</h3>
+      <p>구글로 로그인한 사람끼리 총 수익, 도감, 대어, 수심으로 순위를 겨뤄요. 게스트 기록은 랭킹에 올라가지 않아요.</p>
+      ${ACCOUNT ? '<button type="button" class="buy" id="rankLogin" style="justify-content:center">구글로 로그인하러 가기</button>' : ''}</div>`;
+    return;
+  }
+  const cat = RANK_CATS.find(c => c.key === rankCat), me = rankEntry();
+  const head = `<div class="rank-me">
+      <div class="rank-me-row">
+        <div class="rank-me-name"><small>내 닉네임</small><b>${esc(me.name)}</b></div>
+        <div class="rank-me-pos"><b id="rankMine">-</b><small id="rankTotal">${esc(cat.fmt(me))}</small></div>
+      </div>
+      ${nickEditing ? `<form class="nick-form" id="nickForm"><input id="nickInput" maxlength="12" value="${esc(me.name)}" aria-label="닉네임" autocomplete="off"><button class="mini primary" type="submit">저장</button><button class="mini" type="button" id="nickCancel">취소</button></form>`
+        : '<div class="rank-me-row"><span class="rank-note">다른 사람에게는 닉네임만 보여요.</span><button class="mini" type="button" id="nickEdit">닉네임 바꾸기</button></div>'}
+    </div>
+    <div class="rank-bar"><div class="rank-cats">${RANK_CATS.map(c => `<button type="button" data-rcat="${c.key}" aria-pressed="${c.key === rankCat}">${c.label}</button>`).join('')}</div>
+      <button class="mini" type="button" id="rankRefresh" aria-label="새로고침">새로고침</button></div>
+    <div id="rankBody"><p class="rank-note">순위를 불러오는 중…</p></div>`;
+  el.innerHTML = head;
+  if (nickEditing) { const inp = $('nickInput'); inp.focus(); inp.select(); }
+  if (!FB) { $('rankBody').innerHTML = '<p class="rank-note bad">클라우드에 연결되지 않아 랭킹을 볼 수 없어요.</p>'; return; }
+  try {
+    await pushRank();
+    const R = await loadRanks(rankCat, force);
+    if (seq !== rankSeq) return;
+    $('rankMine').textContent = R.mine ? `${fmtN(R.mine)}위` : '-';
+    if (R.total) $('rankTotal').textContent = `${cat.fmt(me)} · ${fmtN(R.total)}명 중`;
+    const list = R.rows.map((r, i) => `<li class="rank-row${i < 3 ? ` top${i + 1}` : ''}${r.uid === ACCOUNT.uid ? ' me' : ''}"><span class="rk">${i + 1}</span><span class="rn">${esc(cleanNick(r.name) || '이름 없음')}</span><span class="rv">${esc(cat.fmt(r))}</span></li>`).join('');
+    $('rankBody').innerHTML = (list ? `<ol class="rank-list">${list}</ol>` : '<p class="rank-note">아직 아무도 없어요. 첫 번째 주인공이 되어 보세요!</p>')
+      + `<p class="rank-note" style="margin-top:8px">상위 50명까지 보여요. 기록은 낚을 때마다 몇 초 안에 반영돼요.</p>`
+      + (rankErr ? `<p class="rank-note bad">${esc(rankErrText(rankErr))}</p>` : '');
+  } catch (e) {
+    if (seq !== rankSeq) return;
+    $('rankBody').innerHTML = `<p class="rank-note bad">${esc(rankErrText(e))}</p>`;
+  }
+}
+function rankClick(e) {
+  const t = e.target;
+  const cat = t.closest('[data-rcat]');
+  if (cat) { rankCat = cat.dataset.rcat; try { localStorage.setItem(BASE_KEY + '-rankcat', rankCat); } catch (_) {} renderRank(); return true; }
+  if (t.closest('#rankRefresh')) { renderRank(true); return true; }
+  if (t.closest('#nickEdit')) { nickEditing = true; renderRank(); return true; }
+  if (t.closest('#nickCancel')) { nickEditing = false; renderRank(); return true; }
+  if (t.closest('#rankLogin')) { logout(); return true; }
+  return false;
+}
+$('panel-rank').addEventListener('submit', e => {
+  if (e.target.id !== 'nickForm') return;
+  e.preventDefault();
+  const v = cleanNick($('nickInput').value);
+  if (!v) { $('nickInput').focus(); return; }
+  S.nick = v; nickEditing = false; save();
+  pushRank(true).then(() => renderRank(true));
+  toast(`닉네임을 <b>${esc(v)}</b>${josa(v, '으로', '로')} 바꿨어요.`, 'good', 2200);
+});
 
 /* ---------- boot ---------- */
 let session = null;
