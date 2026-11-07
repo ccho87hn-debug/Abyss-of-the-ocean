@@ -551,6 +551,11 @@ const SFX = {
   hook()  { tone(330, 0.12, 'triangle', 0.14, 520); },
   zap()   { tone(1400, 0.15, 'sawtooth', 0.06, 300); },
   catch() { [523, 659, 784, 1046].forEach((f, i) => later(i * 80, () => tone(f, 0.16, 'triangle', 0.12))); },
+  leap()  { noise(0.32, 0.16, 900); tone(260, 0.45, 'sine', 0.08, 980); },
+  fanfare() {
+    [523, 659, 784].forEach((f, i) => later(i * 95, () => tone(f, 0.16, 'triangle', 0.12)));
+    later(300, () => { tone(1046, 0.7, 'triangle', 0.11); tone(1318, 0.7, 'triangle', 0.07); tone(1568, 0.7, 'sine', 0.05); });
+  },
   snap()  { noise(0.18, 0.22, 3500); tone(220, 0.35, 'sawtooth', 0.08, 55); },
   miss()  { tone(392, 0.18, 'triangle', 0.08, 196); },
   buy()   { tone(660, 0.08, 'triangle', 0.1); later(80, () => tone(990, 0.14, 'triangle', 0.1)); },
@@ -1042,6 +1047,7 @@ function rodTip() {
   return { x: h.x + Math.cos(a) * 88, y: h.y + Math.sin(a) * 88, a };
 }
 function camTarget() {
+  if (G.state === 'showoff') return -H * 0.56;
   if (G.state === 'raid') return -H * 0.6;
   const surf = -H * 0.36;
   if (G.state === 'idle' || G.state === 'charging' || G.state === 'casting') return surf;
@@ -1114,6 +1120,7 @@ function pressStart() {
     case 'waiting': G.holding = true; break;
     case 'bite': setHook(); G.holding = true; break;
     case 'fight': G.holding = true; break;
+    case 'showoff': if (G.trophy && G.trophy.phase === 'hold' && G.trophy.t > 0.4) endHold(); break;
   }
 }
 function pressEnd() {
@@ -1254,12 +1261,12 @@ function finishCatch() {
   const d = S.dex[sp.id] || { n: 0, best: 0 }, isNew = d.n === 0;
   d.n++; d.best = Math.max(d.best, F.weight); S.dex[sp.id] = d;
   if (!S.stats.biggest || F.weight > S.stats.biggest.w) S.stats.biggest = { id: sp.id, w: F.weight };
-  splash(f.x, 0, 24); SFX.catch();
-  G.trophy = { sp, x0: f.x, x1: boatX() - 10, t: 0, dir: f.dir, sz: Math.min(f.sz, 90 / sp.len) };
-  addFloat(boatX() + 30, -70, `+${fmtN(value)} G`, '#e2b04a', 24);
+  splash(f.x, 0, 30); SFX.leap();
   const kicker = `${isNew ? '<span class="tag new">NEW</span>' : ''}${sp.boss ? '<span class="tag boss">보스 격파</span>' : sp.kind === 'monster' ? '<span class="tag mon">몬스터 격퇴</span>' : '<span>낚았다!</span>'}`;
-  toast(`<div class="t-kicker">${kicker}</div><div class="t-name">${sp.name}</div><div class="t-meta">${fmtW(F.weight)} · 수심 ${Math.round(F.startY / PX)}m · <b>+${fmtN(value)} G</b></div>`, 'catch', 3400);
-  G.fight = null; G.state = 'idle'; save(); renderAll();
+  // the fish leaps out of the water, the fisher holds it overhead, then it goes into the boat
+  G.trophy = { sp, phase: 'jump', t: 0, x0: f.x, dir: f.dir, sz: clamp(sp.len, 68, 135) / sp.len, weight: F.weight, value, isNew,
+    toast: `<div class="t-kicker">${kicker}</div><div class="t-name">${sp.name}</div><div class="t-meta">${fmtW(F.weight)} · 수심 ${Math.round(F.startY / PX)}m · <b>+${fmtN(value)} G</b></div>` };
+  G.fight = null; G.state = 'showoff'; save(); renderAll();
 }
 
 /* ---------- monster raid ---------- */
@@ -1364,11 +1371,11 @@ function update(dt) {
     case 'landing': updateLanding(dt); break;
     case 'raid': updateRaid(dt); break;
   }
-  if (G.state === 'idle' || G.state === 'charging') { const tip = rodTip(); G.hook.x = tip.x + Math.sin(G.t * 2) * 2; G.hook.y = tip.y + 30; }
+  if (G.state === 'idle' || G.state === 'charging' || G.state === 'showoff') { const tip = rodTip(); G.hook.x = tip.x + Math.sin(G.t * 2) * 2; G.hook.y = tip.y + 30; }
   if ((G.state === 'idle' || G.state === 'waiting' || G.state === 'sinking') && S.stats.catches >= 3 && ACCOUNT) {
     G.raidCd -= dt; if (G.raidCd <= 0) startRaid();
   }
-  if (G.trophy) { G.trophy.t += dt / 0.7; if (G.trophy.t >= 1) G.trophy = null; }
+  if (G.trophy) updateTrophy(dt);
   updateFish(dt); spawnFish(dt); updateParts(dt);
   const prevCam = G.camY;
   G.camY = lerp(G.camY, camTarget(), 1 - Math.pow(0.03, dt));
@@ -1480,6 +1487,16 @@ function drawBoat() {
   c.fillStyle = '#e2b04a'; c.beginPath(); c.ellipse(bx + 11, by - 61, 11, 3, 0, 0, TAU); c.fill();
   c.beginPath(); c.arc(bx + 11, by - 62, 6.5, Math.PI, 0); c.fill();
   c.fillStyle = '#1b1b1b'; c.beginPath(); c.arc(bx + 14, by - 57, 1.2, 0, TAU); c.fill();
+  if (trophyHeld()) {
+    const T = G.trophy, p = trophyPose(T), fy = sy(p.wy) + T.sp.len * p.s * 0.12, spread = Math.min(16, T.sp.len * p.s * 0.22);
+    c.strokeStyle = '#b07a3a'; c.lineWidth = 3; c.beginPath(); c.moveTo(bx - 40, by - 14); c.lineTo(bx + 46, by - 30); c.stroke(); // rod set down on the boat
+    c.strokeStyle = '#d9a23f'; c.lineWidth = 4; c.lineCap = 'round';
+    for (const [sx0, hx] of [[bx + 4, p.x - spread], [bx + 18, p.x + spread]]) {
+      c.beginPath(); c.moveTo(sx0, by - 45); c.lineTo(hx, fy); c.stroke();
+      c.fillStyle = '#f0c9a0'; c.beginPath(); c.arc(hx, fy, 3.2, 0, TAU); c.fill();
+    }
+    return;
+  }
   const h = rodHand(), tip = rodTip();
   c.strokeStyle = '#d9a23f'; c.lineWidth = 4; c.lineCap = 'round'; c.beginPath(); c.moveTo(bx + 16, by - 44); c.lineTo(h.x, sy(h.y)); c.stroke();
   const bend = (G.fight && G.state === 'fight') ? G.fight.T * 22 : G.state === 'landing' ? 14 : 0;
@@ -1489,6 +1506,7 @@ function drawBoat() {
   c.fillStyle = '#ddd'; c.beginPath(); c.arc(h.x + 6, sy(h.y) - 4, 3, 0, TAU); c.fill();
 }
 function drawLine() {
+  if (trophyHeld()) return;
   const c = ctx, tip = rodTip(), tx = tip.x, ty = sy(tip.y);
   let hx = G.hook.x, hy = sy(G.hook.y);
   if (G.state === 'bite' && !reduceMotion) hy += Math.sin(G.t * 40) * 2;
@@ -1514,11 +1532,85 @@ function drawFight() {
   }
   if (F.warn > 0) { ctx.fillStyle = '#f07560'; ctx.font = `28px ${DISPLAY}`; ctx.textAlign = 'center'; ctx.fillText('!!', f.x, y - F.sp.len * f.sz * 0.5 - 12); }
 }
+const T_JUMP = 1.0, T_HOLD = 2.1, T_STOW = 0.42;
+const trophyHalf = T => T.sp.len * T.sz * (T.sp.shape === 'jelly' || T.sp.shape === 'sunfish' ? 0.42 : 0.26);
+function trophyHoldPos(T) { return { x: boatX() + 11, y: -66 - trophyHalf(T) + boatBob() }; } // world coords, just above the fisher's raised hands
+function updateTrophy(dt) {
+  const T = G.trophy; T.t += dt;
+  if (T.phase === 'jump') {
+    const p = trophyPose(T);
+    if (Math.random() < dt * 30) G.parts.push({ type: 'drop', x: p.x + rand(-8, 8), y: p.wy, vx: rand(-30, 30), vy: rand(-20, 40), g: 480, life: rand(0.4, 0.8), r: rand(1.2, 2.6) });
+    if (T.t >= T_JUMP) {
+      T.phase = 'hold'; T.t = 0; SFX.fanfare(); G.shake = 0.12;
+      const hp = trophyHoldPos(T);
+      sparks(hp.x, hp.y, '#ffe9a3', 18);
+      addFloat(hp.x + 46, hp.y - trophyHalf(T) - 6, `+${fmtN(T.value)} G`, '#e2b04a', 24);
+    }
+  } else if (T.phase === 'hold') {
+    if (Math.random() < dt * 7) { const hp = trophyHoldPos(T), a = rand(0, TAU), r = T.sp.len * T.sz * 0.6; G.parts.push({ type: 'spark', x: hp.x + Math.cos(a) * r, y: hp.y + Math.sin(a) * r * 0.6, vx: 0, vy: -20, g: 0, life: rand(0.4, 0.8), r: rand(1.2, 2.4), col: '#fff3c4' }); }
+    if (T.t >= T_HOLD) endHold();
+  } else if (T.t >= T_STOW) {
+    G.trophy = null; if (G.state === 'showoff') G.state = 'idle';
+  }
+}
+function endHold() {
+  const T = G.trophy; if (!T || T.phase !== 'hold') return;
+  T.phase = 'stow'; T.t = 0; splash(boatX() - 10, -6, 8);
+  toast(T.toast, 'catch', 3400);
+}
+const easeOut = u => 1 - Math.pow(1 - u, 3);
+// where the trophy fish is right now: world x/y plus rotation and scale
+function trophyPose(T) {
+  const hp = trophyHoldPos(T);
+  if (T.phase === 'jump') {
+    const u = clamp(T.t / T_JUMP, 0, 1), peak = Math.min(H * 0.26, 170);
+    const wy = lerp(0, hp.y, u) - peak * 4 * u * (1 - u);
+    return { x: lerp(T.x0, hp.x, easeOut(u)), wy, rot: reduceMotion ? 0 : u * TAU * 2 * T.dir, s: T.sz * (0.85 + 0.15 * u), dir: T.dir };
+  }
+  if (T.phase === 'hold') {
+    const pop = 1 + 0.18 * Math.max(0, 1 - T.t / 0.22);
+    return { x: hp.x, wy: hp.y + Math.sin(G.t * 3) * 2, rot: reduceMotion ? 0 : Math.sin(G.t * 9) * 0.07, s: T.sz * pop, dir: 1 };
+  }
+  const u = clamp(T.t / T_STOW, 0, 1);
+  return { x: lerp(hp.x, boatX() - 22, u), wy: lerp(hp.y, -6, u * u), rot: -u * 0.8, s: T.sz * (1 - 0.75 * u), dir: 1, a: 1 - u };
+}
+const trophyHeld = () => G.trophy && G.trophy.phase !== 'jump';
+function drawTrophyRays() {
+  const T = G.trophy; if (!T || T.phase !== 'hold') return;
+  const c = ctx, hp = trophyHoldPos(T), x = hp.x, y = sy(hp.y), R = Math.max(110, T.sp.len * T.sz * 1.3);
+  const a = Math.min(1, T.t / 0.3) * (T.t > T_HOLD - 0.3 ? (T_HOLD - T.t) / 0.3 : 1);
+  c.save(); c.globalAlpha = 0.55 * a; c.translate(x, y); if (!reduceMotion) c.rotate(G.t * 0.6);
+  const g = c.createRadialGradient(0, 0, 4, 0, 0, R); g.addColorStop(0, 'rgba(255,236,170,0.9)'); g.addColorStop(1, 'rgba(255,236,170,0)');
+  c.fillStyle = g;
+  for (let i = 0; i < 12; i++) { const a0 = i / 12 * TAU; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, R, a0, a0 + TAU / 26); c.closePath(); c.fill(); }
+  c.globalAlpha = 0.7 * a; c.beginPath(); c.arc(0, 0, R * 0.45, 0, TAU); c.fill();
+  c.restore();
+}
 function drawTrophy() {
   const T = G.trophy; if (!T) return;
-  const u = T.t, x = lerp(T.x0, T.x1, u), y = sy(0) - Math.sin(Math.PI * u) * 110 - u * 20;
-  ctx.save(); ctx.translate(x, y); ctx.rotate((u - 0.5) * 1.4 * T.dir);
-  drawCreature(ctx, T.sp, 0, 0, T.dir, G.t, T.sz); ctx.restore();
+  const p = trophyPose(T);
+  ctx.save(); ctx.globalAlpha = p.a ?? 1; ctx.translate(p.x, sy(p.wy)); ctx.rotate(p.rot);
+  drawCreature(ctx, T.sp, 0, 0, p.dir, G.t * (T.phase === 'hold' ? 1.8 : 1.2), p.s); ctx.restore();
+}
+// big caption under the boat while the fish is held up
+function drawCatchBanner() {
+  const T = G.trophy; if (!T || T.phase !== 'hold') return;
+  const c = ctx, sp = T.sp, k = clamp(T.t / 0.25, 0, 1), fade = T.t > T_HOLD - 0.25 ? (T_HOLD - T.t) / 0.25 : 1;
+  const pop = reduceMotion ? 1 : 1 + 0.22 * (1 - easeOut(k)), y = Math.min(H - 120, sy(0) + 78);
+  const title = `${sp.name}${josa(sp.name, '을', '를')} 낚았다!`;
+  const kick = sp.boss ? '보스 격파!' : sp.kind === 'monster' ? '몬스터 격퇴!' : T.isNew ? '새로운 물고기!' : '';
+  c.save(); c.globalAlpha = k * fade; c.translate(W / 2, y); c.scale(pop, pop);
+  let size = 34; c.font = `${size}px ${DISPLAY}`;
+  while (size > 18 && c.measureText(title).width > W - 72) { size -= 2; c.font = `${size}px ${DISPLAY}`; }
+  const bw = Math.min(W - 32, c.measureText(title).width + 56), bh = size + (kick ? 58 : 40);
+  c.fillStyle = 'rgba(6,16,28,0.82)'; rrect(c, -bw / 2, -bh / 2, bw, bh, 16); c.fill();
+  c.strokeStyle = sp.boss ? '#f07560' : sp.kind === 'monster' ? '#b9a6f5' : '#e2b04a'; c.lineWidth = 2; c.stroke();
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  let yy = -bh / 2 + 14;
+  if (kick) { c.font = `14px ${DISPLAY}`; c.fillStyle = sp.boss ? '#f07560' : sp.kind === 'monster' ? '#c9b6ff' : '#e2b04a'; c.fillText(kick, 0, yy + 2); yy += 18; }
+  c.font = `${size}px ${DISPLAY}`; c.fillStyle = '#e6f0ef'; c.fillText(title, 0, yy + size / 2 + 2);
+  c.font = `13px ${BODY}`; c.fillStyle = '#9bb4c3'; c.fillText(`${fmtW(T.weight)} · +${fmtN(T.value)} G`, 0, bh / 2 - 13);
+  c.restore(); c.textBaseline = 'alphabetic';
 }
 function drawRaid() {
   const R = G.raid; if (!R) return;
@@ -1681,9 +1773,9 @@ function draw() {
   if (G.shake > 0 && !reduceMotion) c.translate(rand(-4, 4) * Math.min(1, G.shake * 3), rand(-4, 4) * Math.min(1, G.shake * 3));
   const surf = sy(0);
   drawSky(surf); drawWater(surf); drawSnow(); drawRuler();
-  drawFishList(); drawFight(); drawBoat(); drawLine(); drawTrophy(); drawRaid(); drawParts(); drawDark();
+  drawFishList(); drawFight(); drawTrophyRays(); drawBoat(); drawLine(); drawTrophy(); drawRaid(); drawParts(); drawDark();
   c.restore();
-  drawHUD();
+  drawHUD(); drawCatchBanner();
 }
 
 /* ---------- hint ---------- */
@@ -1698,6 +1790,7 @@ function updateHint() {
     case 'bite': t = '지금 눌러요!'; cls = 'urgent'; break;
     case 'fight': t = G.fight && G.fight.T > 0.85 ? '줄이 끊어지기 직전! 손을 떼세요' : '누르면 감고, 떼면 풀려요 · 바늘을 초록 구간에 맞추세요'; cls = G.fight && G.fight.T > 0.85 ? 'danger' : ''; break;
     case 'landing': t = '끌어올리는 중!'; break;
+    case 'showoff': t = G.trophy && G.trophy.phase === 'hold' ? '눌러서 넘기기' : '와!'; break;
     case 'raid': t = G.raid && G.raid.phase === 'fight' ? '촉수를 연타해서 쫓아내세요!' : '…'; cls = G.raid && G.raid.phase === 'fight' ? 'danger' : ''; break;
   }
   if (t !== G.hint || cls !== G.hintCls) { G.hint = t; G.hintCls = cls; hintEl.textContent = t; hintEl.className = 'hint' + (cls ? ' ' + cls : ''); }
@@ -1840,7 +1933,7 @@ document.querySelector('.panel').addEventListener('click', e => {
   if (e.target.closest('#resetBtn')) {
     if (!resetArmed) { resetArmed = true; renderLog(); setTimeout(() => { if (resetArmed) { resetArmed = false; renderLog(); } }, 4000); return; }
     resetArmed = false; const snd = S.sound; S = fresh(); S.sound = snd; save();
-    G.state = 'idle'; G.fight = null; G.bite = null; G.raid = null; G.raidCd = rand(80, 140);
+    G.state = 'idle'; G.fight = null; G.bite = null; G.raid = null; G.trophy = null; G.raidCd = rand(80, 140);
     renderAll(); renderDex(); toast('<b>새 출발!</b> 대나무 낚싯대 하나로 다시 시작해요.', 'good');
   }
 });
@@ -1934,7 +2027,7 @@ function setAccount(acc, quiet, data) {
   try { localStorage.setItem(SESSION_KEY, JSON.stringify(acc)); } catch (_) {}
   S = data ? normalize(data) : readSave(KEY) || fresh();
   writeLocal(KEY, S);
-  G.state = 'idle'; G.fight = null; G.bite = null; G.raid = null; G.holding = false; G.raidCd = rand(80, 140); clearInterest();
+  G.state = 'idle'; G.fight = null; G.bite = null; G.raid = null; G.trophy = null; G.holding = false; G.raidCd = rand(80, 140); clearInterest();
   renderAll(); renderAccount(); setNote('');
   $('login').hidden = true; cvs.focus({ preventScroll: true });
   if (!quiet) toast(acc.type === 'google' ? `<b>${esc(acc.name)}</b>님, 어서 오세요! 기록은 클라우드에 저장돼요.` : '<b>게스트</b>로 시작해요. 기록은 이 브라우저에 저장돼요.', 'good', 2800);
@@ -1967,7 +2060,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 window.addEventListener('pagehide', () => { flushCloud(); });
 
 function showLogin(note) {
-  G.state = 'idle'; G.fight = null; G.bite = null; G.raid = null; G.holding = false; clearInterest();
+  G.state = 'idle'; G.fight = null; G.bite = null; G.raid = null; G.trophy = null; G.holding = false; clearInterest();
   $('loginMain').hidden = false; $('loginMerge').hidden = true;
   $('login').hidden = false; initGoogle(); if (note) setNote(note, true); $('guestBtn').focus();
 }
